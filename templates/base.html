@@ -1,0 +1,114 @@
+{% load static %}
+<!doctype html>
+
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css"/>
+    <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.4.1/css/rowGroup.dataTables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
+    {% block title %}
+        <title></title>
+    {% endblock title %}
+</head>
+<body>
+<div class="flex-container">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="{% static 'images/home.png' %}" alt="" width="30" height="30">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/run_scraper' %}active{% endif %}" aria-current="page"
+                           href="{% url 'run_scraper' %}">Run Scraper</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/scrape_email_and_links' %}active{% endif %}"
+                           aria-current="page"
+                           href="{% url 'scrape_email_and_links' %}">Get Emails & Links</a>
+                    </li>
+                    {#                    <li class="nav-item dropdown">#}
+                    {#                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"#}
+                    {#                           aria-expanded="false">#}
+                    {#                            Listings#}
+                    {#                        </a>#}
+                    {#                        <ul class="dropdown-menu">#}
+                    {#                            <li><a class="dropdown-item {% if request.path == '/all_new' %}active{% endif %}"#}
+                    {#                                   href="{% url 'all_new' %}">All For Sale Listings</a></li>#}
+                    {#                            <li><a class="dropdown-item {% if request.path == '/new' %}active{% endif %}"#}
+                    {#                                   href="{% url 'new' %}">Fresh For Sale Listings</a></li>#}
+                    {#                            <li><a class="dropdown-item {% if request.path == '/all_pending' %}active{% endif %}"#}
+                    {#                                   href="{% url 'all_pending' %}">All Pending Listings</a></li>#}
+                    {#                            <li><a class="dropdown-item {% if request.path == '/pending' %}active{% endif %}"#}
+                    {#                                   href="{% url 'pending' %}">Fresh Pending Listings</a></li>#}
+                    {##}
+                    {#                        </ul>#}
+                    {#                    </li>#}
+                </ul>
+
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle text-info" type="button" id="dropdownMenuButton"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="{% static 'images/profile.png' %}" alt="User Image" width="30" height="30">
+                        {% if user.is_authenticated %}
+                            {{ user.username }}
+                        {% endif %}
+                    </button>
+                    <ul class="dropdown-menu mt-2" aria-labelledby="dropdownMenuButton">
+                        {% if user.is_authenticated %}
+                            <li class="border-secondary bg-danger"><a class="dropdown-item"
+                                                                      href="{% url 'logout' %}">Logout</a>
+                                {% else %}
+                            <li class="border-secondary bg-warning">
+                            <a class="dropdown-item" href="{% url 'login' %}">Login</a>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>
+
+{% block body %}
+{% endblock body %}
+<div class="b-example-divider"></div>
+
+<div class="container">
+    <footer class="py-3 my-4">
+        <ul class="nav justify-content-center border-bottom pb-3 mb-3 align-bottom">
+            <li class="nav-item"><a href="#" class="nav-link px-2 text-body-secondary">Home</a></li>
+            <li class="nav-item"><a href="#" class="nav-link px-2 text-body-secondary">FAQs</a></li>
+            <li class="nav-item"><a href="#" class="nav-link px-2 text-body-secondary">About</a></li>
+        </ul>
+    </footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+</body>
+{% block js %}
+{% endblock js %}
+
+</html>

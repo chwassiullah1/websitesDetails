@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Run Scraper</title>
+{% endblock title %}
+{% block body %}
+    <div class="container-fluid">
+        <div class="container-fluid">
+            <div class="row mt-5 justify-content-center">
+                <div class="col-md-12">
+                    <div class="container mt-3">
+                        <div class="row justify-content-center">
+                            <div class="col-md-12">
+                                <div class="card border-secondary">
+                                    <div class="card-header navbar-dark bg-dark text-white">
+                                        <h4>Run Scraper</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label for="exampleFormControlInput1" class="form-label"><strong>Enter
+                                                    Website
+                                                    URL</strong></label>
+                                                <input type="text" class="form-control" id="exampleFormControlInput1"
+                                                       placeholder="https://example.com" name="website"
+                                                       value="{{ website_url }}">
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Run</button>
+                                            <a href="{% url 'run_scraper' %}" class="btn btn-danger">Clear</a>
+                                        </form>
+
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Page+Hunter
+                                                Merged JSON</strong></label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1"
+                                                      rows="3">{{ final_json }}</textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlTextarea1" class="form-label"> <strong>Raw
+                                                Links</strong></label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1"
+                                                      rows="3">{{ raw_links }}</textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Links
+                                                Result
+                                                from OpenAI</strong></label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1"
+                                                      rows="3">{{ raw_link_json }}</textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text of
+                                                home-page</strong></label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1"
+                                                      rows="3">{{ home_page_text }}</textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text of
+                                                about-us-page</strong></label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1"
+                                                      rows="3">{{ about_page_text }}</textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text of
+                                                products-page</strong></label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1"
+                                                      rows="3">{{ products_page_text }}</textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text of
+                                                contact-us-page</strong></label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1"
+                                                      rows="3">{{ contact_page_text }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+{% endblock body %}
+{% block js %}
+{% endblock js %}

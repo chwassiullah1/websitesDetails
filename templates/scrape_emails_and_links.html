@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Run Scraper</title>
+{% endblock title %}
+{% block body %}
+    <div class="container-fluid">
+        <div class="container-fluid">
+            <div class="row mt-5 justify-content-center">
+                <div class="col-md-12">
+                    <div class="container mt-3">
+                        <div class="row justify-content-center">
+                            <div class="col-md-12">
+                                <div class="card border-secondary">
+                                    <div class="card-header navbar-dark bg-dark text-white">
+                                        <h4>Run Scraper</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label for="exampleFormControlInput1" class="form-label"><strong>Enter
+                                                    Website
+                                                    URL</strong></label>
+                                                <input type="text" class="form-control" id="exampleFormControlInput1"
+                                                       placeholder="https://example.com" name="website"
+                                                       value="{{ website_url }}">
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Run</button>
+                                            <a href="{% url 'scrape_email_and_links' %}" class="btn btn-danger">Clear</a>
+                                        </form>
+                                        
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Unique
+                                                Links</strong></label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1"
+                                                      rows="3">{{ unique_links }}</textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Unique
+                                                Emails</strong></label>
+                                            <textarea class="form-control" id="exampleFormControlTextarea1"
+                                                      rows="3">{{ unique_mails }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+{% endblock body %}
+{% block js %}
+{% endblock js %}

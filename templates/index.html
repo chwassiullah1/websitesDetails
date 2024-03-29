@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Home</title>
+{% endblock title %}
+{% block body %}
+    <div class="container-fluid ">
+        <!-- Property Information Section -->
+        <div class="row mt-5 ">
+            <div class="col-md-6">
+                <p><strong>Welcome</strong></p>
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>To initiate the scraper, kindly navigate to the "Run Scraper" page.
+                    </li>
+                    <li>Input the website URL and then click on the "Run" button.</li>
+                    {#                    <li>You have the option to sort the table in ascending or descending order.</li>#}
+                    {#                    <li>You can choose to search within the table by name, price, etc.</li>#}
+                </ul>
+                {#                <p>To view All Properties please click on All Listing.</p>#}
+                {#                <p>To view For Sale Properties please click on New Listing.</p>#}
+                {#                <p>To view Pending Properties please click on Pending Listing.</p>#}
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+{% block js %}
+{% endblock js %}
