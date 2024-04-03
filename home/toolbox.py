@@ -11,7 +11,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-api_key = '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'
+api_key = ''
 
 
 def remove_html_tags(text):
@@ -28,7 +28,7 @@ def filter_links(links, website_url):
     for link in links:
         parsed_link = urlparse(link)
         link_domain = parsed_link.netloc
-        if any(substring in link_domain for substring in excluded_substrings) or link_domain == website_domain:
+        if any(substring in link_domain for substring in excluded_substrings) or link_domain in website_domain:
             filtered_links.append(link)
 
     if website_url not in filtered_links:
@@ -209,7 +209,7 @@ async def run_assistant(response, pages_text):
     api_hunter_json_str = response.text
     all_json_merged = merge_website_pages_json_api_hunter_json(api_hunter_json_str,
                                                                website_pages_merged_json_str)
-    all_json_merged = json.dumps(all_json_merged, ensure_ascii=False, indent=4)
+    all_json_merged = json.dumps(all_json_merged, ensure_ascii=False, indent=4).lower()
     all_json_merged = company_longest_name(all_json_merged)
     all_json_merged = company_shortest_name(all_json_merged)
     all_json_merged = remove_duplicate_products(all_json_merged)

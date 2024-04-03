@@ -17,6 +17,7 @@ import logging
 from urllib.parse import urlparse
 
 from home.url_determiner import evaluate_preference
+import codecs
 
 logging.basicConfig(level=logging.INFO)
 
@@ -32,7 +33,7 @@ def run_scraper(request):
         website_url = request.POST.get('website')
         clean_website_url = clean_url(website_url)
         protocol, domain = evaluate_preference(clean_website_url)
-        website_url = f'{protocol}://www.{domain}'
+        website_url = f'{protocol}://{domain}'
         # parsed_url = urlparse(website_url)
 
         # if not parsed_url.scheme and parsed_url.path.startswith('www'):
@@ -47,9 +48,17 @@ def run_scraper(request):
         if hasattr(asyncio, 'run'):
             data_dict = asyncio.run(parse(website_url))
         else:
+            # loop = asyncio.new_event_loop()
+            # data_dict = loop.run_until_complete(parse(website_url))
+            # loop.close()
             loop = asyncio.new_event_loop()
-            data_dict = loop.run_until_complete(parse(website_url))
-            loop.close()
+            asyncio.set_event_loop(loop)
+            try:
+                data_dict = loop.run_until_complete(parse(website_url))
+            except Exception as e:
+                print(e)
+            finally:
+                loop.close()
 
         links = data_dict.get('links')
         links = list(set(links))
@@ -69,8 +78,8 @@ def run_scraper(request):
                 contact_page_text = text[1]
             elif text[0] == 'products_page':
                 products_page_text = text[1]
-
-        context = {'final_json': json.dumps(data), 'raw_links': links,
+        final_json = codecs.decode(json.dumps(data), 'unicode_escape')
+        context = {'final_json': final_json, 'raw_links': links,
                    'raw_link_json': json_response,
                    'home_page_text': home_page_text,
                    'about_page_text': about_page_text,
