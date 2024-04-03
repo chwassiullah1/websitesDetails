@@ -12,9 +12,11 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from home.forms import CustomSignupForm
-from home.toolbox import links_determiner_assistant, run_assistant, filter_links, get_links_and_emails
+from home.toolbox import links_determiner_assistant, run_assistant, filter_links, get_links_and_emails, clean_url
 import logging
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse
+
+from home.url_determiner import evaluate_preference
 
 logging.basicConfig(level=logging.INFO)
 
@@ -27,15 +29,18 @@ def home(request):
 @login_required(login_url='login')
 def run_scraper(request):
     if request.method == "POST":
-        website_url = request.POST.get('website').rstrip('/')
-        parsed_url = urlparse(website_url)
+        website_url = request.POST.get('website')
+        clean_website_url = clean_url(website_url)
+        protocol, domain = evaluate_preference(clean_website_url)
+        website_url = f'{protocol}://www.{domain}'
+        # parsed_url = urlparse(website_url)
 
-        if not parsed_url.scheme and parsed_url.path.startswith('www'):
-            website_url = "http://" + parsed_url.path
-        elif not parsed_url.scheme and not parsed_url.path.startswith('www'):
-            website_url = "http://www." + parsed_url.path
-        elif not parsed_url.netloc or not parsed_url.netloc.startswith("www."):
-            website_url = parsed_url.scheme + "://www." + (parsed_url.netloc or '') + parsed_url.path
+        # if not parsed_url.scheme and parsed_url.path.startswith('www'):
+        #     website_url = "http://" + parsed_url.path
+        # elif not parsed_url.scheme and not parsed_url.path.startswith('www'):
+        #     website_url = "http://www." + parsed_url.path
+        # elif not parsed_url.netloc or not parsed_url.netloc.startswith("www."):
+        #     website_url = parsed_url.scheme + "://www." + (parsed_url.netloc or '') + parsed_url.path
 
         # if not website_url.startswith('http'):
         #     website_url = 'http://' + website_url
@@ -51,26 +56,19 @@ def run_scraper(request):
         json_response = data_dict.get('json_response')
         data = data_dict.get('data')
         pages_text = data_dict.get('pages_text')
-
-        try:
-            home_page_text = pages_text[0]
-        except:
-            home_page_text = ''
-
-        try:
-            about_page_text = pages_text[1]
-        except:
-            about_page_text = ''
-
-        try:
-            products_page_text = pages_text[2]
-        except:
-            products_page_text = ''
-
-        try:
-            contact_page_text = pages_text[3]
-        except:
-            contact_page_text = ''
+        home_page_text = ''
+        about_page_text = ''
+        products_page_text = ''
+        contact_page_text = ''
+        for text in pages_text:
+            if text[0] == 'home_page':
+                home_page_text = text[1]
+            elif text[0] == 'about_page':
+                about_page_text = text[1]
+            elif text[0] == 'contact_page':
+                contact_page_text = text[1]
+            elif text[0] == 'products_page':
+                products_page_text = text[1]
 
         context = {'final_json': json.dumps(data), 'raw_links': links,
                    'raw_link_json': json_response,
@@ -113,7 +111,7 @@ async def fetch_page_content(page_link):
 
     try:
         async with aiohttp.ClientSession(headers=headers) as session:
-            async with session.get(page_link, ssl=False) as response:
+            async with session.get(page_link[1], ssl=False, allow_redirects=True) as response:
                 if response.status == 200:
                     html = await response.text()
                     soup = BeautifulSoup(html, 'html.parser')
@@ -121,7 +119,8 @@ async def fetch_page_content(page_link):
                         script_or_style.decompose()
                     text = soup.get_text()
                     clean_text = re.sub(r'\s+', ' ', text)
-                    return clean_text.strip()
+                    data = page_link[0], clean_text.strip()
+                    return data
                 else:
                     print(f"Error fetching page: {response.status}")
                     return ''
@@ -141,7 +140,7 @@ async def parse(website_url):
     # page_response = Selector(text=response.text)
     # links = list(set(page_response.css('a::attr(href)').getall()))
     try:
-        response = requests.get(website_url, verify=False, headers=headers)
+        response = requests.get(website_url, allow_redirects=True, verify=False, headers=headers)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             links = list(set([link.get('href') for link in soup.find_all('a')]))
@@ -150,26 +149,29 @@ async def parse(website_url):
 
             json_response = links_determiner_assistant(','.join(links))  # assistant 1
             json_response = json.loads(json_response)
-
-            assistant_page_links.append(website_url)
+            data = 'home_page', website_url
+            assistant_page_links.append(data)
             about_us_page = json_response.get('about_page', '')
             if about_us_page:
-                assistant_page_links.append(about_us_page)
+                data = 'about_page', about_us_page
+                assistant_page_links.append(data)
 
             products_page = json_response.get('products_page', '')
             if products_page:
-                assistant_page_links.append(products_page)
+                data = 'products_page', products_page
+                assistant_page_links.append(data)
 
             contact_page = json_response.get('contact_page', '')
             if contact_page:
-                assistant_page_links.append(contact_page)
+                data = 'contact_page', contact_page
+                assistant_page_links.append(data)
 
             tasks = [fetch_page_content(page_link) for page_link in assistant_page_links]
             pages_text = await asyncio.gather(*tasks)
 
             api_hunter_url = f'https://api.hunter.io/v2/domain-search?domain={website_url}&limit=100&api_key=8081bb56d8a84310a6e2ce9ac4950b270a3127e7'
             response = requests.get(api_hunter_url, verify=False, headers=headers)
-            data = await get_api_hunter_data(response, pages_text)
+            data = await get_api_hunter_data(response, [text[1] for text in pages_text])
             data_dict = {
                 'links': links,
                 'json_response': json_response,
@@ -187,7 +189,8 @@ async def parse(website_url):
             return data_dict
 
 
-    except:
+    except Exception as e:
+        print(e)
         data_dict = {
             'links': '',
             'json_response': '',

@@ -11,7 +11,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-api_key = ''
+api_key = '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'
 
 
 def remove_html_tags(text):
@@ -39,21 +39,29 @@ def filter_links(links, website_url):
 def company_longest_name(final_json):
     data = json.loads(final_json)
     company_names = data.get("company_legal_name", [])
-    longest_name = ""
-    for name in company_names:
-        if len(name) > len(longest_name):
-            longest_name = name
-    data["company_legal_name"] = longest_name
+
+    if type(company_names) == list:
+        longest_name = ""
+        for name in company_names:
+            if len(name) > len(longest_name):
+                longest_name = name
+        data["company_legal_name"] = longest_name
+    else:
+        data["company_legal_name"] = company_names
     return data
 
 
 def company_shortest_name(data):
     company_short_names = data.get("company_short_name", [])
     shortest_name = None
-    for name in company_short_names:
-        if name and (shortest_name is None or len(name) < len(shortest_name)):
-            shortest_name = name
-    data["company_short_name"] = shortest_name
+    if type(company_short_names) == list:
+        for name in company_short_names:
+            if name and (shortest_name is None or len(name) < len(shortest_name)):
+                shortest_name = name
+        data["company_short_name"] = shortest_name
+
+    else:
+        data["company_short_name"] = company_short_names
     return data
 
 
@@ -63,6 +71,9 @@ def remove_duplicate_products(data):
         products = list(set([product.lower() for product in products]))
         products = [product.title() for product in products]
         data["product"] = products
+        return data
+    else:
+        data["product"] = []
         return data
 
 
@@ -311,3 +322,13 @@ def get_links_and_emails(website_url):
     driver.quit()
     links = list(filter(None, links))
     return list(set(links)), list(set(mails))
+
+
+def clean_url(url):
+    if not urlparse(url).scheme:
+        url = 'http://' + url
+    parsed_url = urlparse(url)
+    domain = '{uri.netloc}'.format(uri=parsed_url)
+    if domain.startswith('www.'):
+        domain = domain[4:]
+    return domain
