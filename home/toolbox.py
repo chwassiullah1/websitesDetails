@@ -11,7 +11,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-api_key = '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'
+api_key = ''
 
 
 def remove_html_tags(text):
