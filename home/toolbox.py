@@ -21,14 +21,15 @@ def remove_html_tags(text):
 
 
 def filter_links(links, website_url):
-    excluded_substrings = ['youtube', 'linkedin', 'facebook', 'instagram', 'twitter', 'x.com']
+    excluded_substrings = ['youtube', 'linkedin', 'facebook', 'instagram', 'twitter', 'x.com', 'javascript: void(0);',
+                           'javascript:;']
     parsed_website_url = urlparse(website_url)
-    website_domain = parsed_website_url.netloc
+    website_domain = parsed_website_url.netloc.replace('www.', '')
     filtered_links = []
     for link in links:
         parsed_link = urlparse(link)
-        link_domain = parsed_link.netloc
-        if any(substring in link_domain for substring in excluded_substrings) or link_domain in website_domain:
+        link_domain = parsed_link.netloc.replace('www.', '')
+        if not any(substring in link for substring in excluded_substrings) and link_domain == website_domain:
             filtered_links.append(link)
 
     if website_url not in filtered_links:
@@ -145,44 +146,93 @@ def merge_website_pages_json_api_hunter_json(api_hunter_json_str, website_pages_
     return website_pages_merged_json
 
 
+# OLD CODE
+# def merge_all_pages_jsons(json_list):
+#     merged_json = {}
+#     if json_list:
+#         for json_obj in json_list:
+#             json_obj = json.loads(json_obj)
+#             for key, value in json_obj.items():
+#                 if value is not None:
+#                     if key not in merged_json:
+#                         merged_json[key] = standardize_value(value)
+#                     else:
+#                         if isinstance(value, list):
+#                             if all(isinstance(item, dict) for item in value):
+#                                 if isinstance(merged_json[key], str):
+#                                     merged_json[key] = json.loads(merged_json[key])
+#                                 merged_json[key].extend([dict(items) for items in set(
+#                                     tuple((k, standardize_value(v)) for k, v in d.items() if
+#                                           standardize_value(v) is not None) for d in
+#                                     merged_json[key] + value)])
+#                                 # Remove duplicates
+#                                 merged_json[key] = remove_duplicates(merged_json[key])
+#                             else:
+#                                 merged_json[key].extend(
+#                                     list(set(standardize_value(v) for v in value)))
+#                                 # Remove duplicates
+#                                 merged_json[key] = remove_duplicates(merged_json[key])
+#                         elif isinstance(value, dict):
+#                             if isinstance(merged_json[key], str):
+#                                 merged_json[key] = json.loads(merged_json[key])
+#                             merged_json[key] = merge_all_pages_jsons([merged_json[key], value])
+#                         else:
+#                             standardized_value = standardize_value(value)
+#                             if isinstance(merged_json[key], list):
+#                                 if standardized_value not in merged_json[key]:
+#                                     merged_json[key].append(standardized_value)
+#                             else:
+#                                 if standardized_value != merged_json[key]:
+#                                     merged_json[key] = [merged_json[key], standardized_value]
+#         return json.dumps(merged_json).strip()
+
+
+def merge_dicts(dict1, dict2):
+    merged_dict = {**dict1, **dict2}
+    for key, value in merged_dict.items():
+        if isinstance(value, list):
+            if all(isinstance(item, dict) for item in value):
+                merged_dict[key] = [merge_dicts(d1, d2) for d1, d2 in zip(dict1.get(key, []), value)]
+            else:
+                merged_dict[key] = remove_duplicates(value)
+    return merged_dict
+
+
 def merge_all_pages_jsons(json_list):
     merged_json = {}
     if json_list:
         for json_obj in json_list:
-            json_obj = json.loads(json_obj)
+            try:
+                json_obj = json.loads(json_obj)
+            except json.JSONDecodeError:
+                continue
+
             for key, value in json_obj.items():
-                if value is not None:
-                    if key not in merged_json:
-                        merged_json[key] = standardize_value(value)
-                    else:
-                        if isinstance(value, list):
-                            if all(isinstance(item, dict) for item in value):
-                                if isinstance(merged_json[key], str):
-                                    merged_json[key] = json.loads(merged_json[key])
-                                merged_json[key].extend([dict(items) for items in set(
-                                    tuple((k, standardize_value(v)) for k, v in d.items() if
-                                          standardize_value(v) is not None) for d in
-                                    merged_json[key] + value)])
-                                # Remove duplicates
-                                merged_json[key] = remove_duplicates(merged_json[key])
-                            else:
-                                merged_json[key].extend(
-                                    list(set(standardize_value(v) for v in value)))
-                                # Remove duplicates
-                                merged_json[key] = remove_duplicates(merged_json[key])
-                        elif isinstance(value, dict):
-                            if isinstance(merged_json[key], str):
-                                merged_json[key] = json.loads(merged_json[key])
-                            merged_json[key] = merge_all_pages_jsons([merged_json[key], value])
+                # Handle None values consistently
+                if value is None:
+                    continue
+                existing_value = merged_json.get(key)
+                if isinstance(value, list):
+                    if all(isinstance(item, dict) for item in value):
+                        if isinstance(existing_value, str):
+                            existing_value = json.loads(existing_value)
+                        if isinstance(existing_value, list) and all(isinstance(item, dict) for item in existing_value):
+                            merged_json[key] = [merge_dicts(d1, d2) for d1, d2 in zip(existing_value, value)]
                         else:
-                            standardized_value = standardize_value(value)
-                            if isinstance(merged_json[key], list):
-                                if standardized_value not in merged_json[key]:
-                                    merged_json[key].append(standardized_value)
-                            else:
-                                if standardized_value != merged_json[key]:
-                                    merged_json[key] = [merged_json[key], standardized_value]
-        return json.dumps(merged_json).strip()
+                            merged_json[key] = []
+                    merged_json[key] = remove_duplicates([standardize_value(v) for v in (existing_value or []) + value])
+                elif isinstance(value, dict):
+                    if existing_value is None:
+                        merged_json[key] = value
+                    else:
+                        try:
+                            merged_json[key] = merge_dicts(existing_value, value)
+                        except TypeError:
+                            pass
+                else:
+                    if existing_value is None or existing_value != standardize_value(value):
+                        merged_json[key] = standardize_value(value)
+    return json.dumps(merged_json).strip()
 
 
 def remove_duplicates(lst):
