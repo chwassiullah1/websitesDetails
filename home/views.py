@@ -3,6 +3,8 @@ import asyncio
 import aiohttp
 import re
 from urllib.parse import urljoin
+
+import scrapy
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 import requests
@@ -15,7 +17,8 @@ from home.forms import CustomSignupForm
 from home.toolbox import links_determiner_assistant, run_assistant, filter_links, get_links_and_emails, clean_url
 import logging
 from urllib.parse import urlparse
-
+import socket
+import ssl
 from home.url_determiner import evaluate_preference
 import codecs
 
@@ -26,31 +29,78 @@ def home(request):
     return render(request, 'index.html')
 
 
+# def get_longer_url_text(url):
+#     http_url = 'http://' + url
+#     https_url = 'https://' + url
+#     try:
+#         response_http = requests.get(http_url, verify=False)
+#         response_https = requests.get(https_url, verify=False)
+#     except requests.exceptions.RequestException as e:
+#         print("Error making requests:", e)
+#         return None
+#     # if len(response_http.text) > len(response_https.text):
+#     #     return http_url
+#     # else:
+#     #     return https_url
+#     soup1 = BeautifulSoup(response_http.text, 'html.parser')
+#     http_links = list(set([link.get('href') for link in soup1.find_all('a')]))
+#     http_links = [urljoin(response_http.url, link) for link in http_links if link and not link.startswith('mailto:')]
+#     http_links = filter_links(http_links, response_http.url)
+#
+#     soup2 = BeautifulSoup(response_https.text, 'html.parser')
+#     https_links = list(set([link.get('href') for link in soup2.find_all('a')]))
+#     https_links = [urljoin(response_https.url, link) for link in https_links if link and not link.startswith('mailto:')]
+#     https_links = filter_links(https_links, response_https.url)
+#
+#     if len(http_links) == len(https_links):
+#         return https_url
+#     elif len(http_links) > len(https_links):
+#         return http_url
+#     else:
+#         return https_url
+
+# def has_valid_ssl(url):
+#     try:
+#         ctx = ssl.create_default_context()
+#         with ctx.wrap_socket(socket.socket(), server_hostname=url) as s:
+#             s.connect((url, 443))
+#         # print(url+" has valid SSL")
+#         return True
+#
+#     except Exception as e:
+#         return False
+#         # print(url+": has INVALID SSL, error:"+str(e))
+
+
+def check_ssl(url):
+    url = 'https://w3techs.com/sites/info/{}'.format(url)
+    response = requests.get(url=url)
+    response = scrapy.Selector(text=response.text)
+    ssl_text = response.xpath("//div[p/a/text()='SSL Certificate Authority']/following-sibling::p[1]/text()").get(
+        '').strip()
+    if ssl_text == 'Invalid Domain':
+        return False
+    else:
+        return True
+
+
 @csrf_exempt
 @login_required(login_url='login')
 def run_scraper(request):
     if request.method == "POST":
         website_url = request.POST.get('website')
         clean_website_url = clean_url(website_url)
-        protocol, domain = evaluate_preference(clean_website_url)
-        website_url = f'{protocol}://{domain}'
-        # parsed_url = urlparse(website_url)
+        # protocol, domain = evaluate_preference(clean_website_url)
+        # website_url = f'{protocol}://{domain}'
+        ssl_info = check_ssl(clean_website_url)
+        if ssl_info:
+            website_url = f'https://www.{clean_website_url}'
+        else:
+            website_url = f'http://www.{clean_website_url}'
 
-        # if not parsed_url.scheme and parsed_url.path.startswith('www'):
-        #     website_url = "http://" + parsed_url.path
-        # elif not parsed_url.scheme and not parsed_url.path.startswith('www'):
-        #     website_url = "http://www." + parsed_url.path
-        # elif not parsed_url.netloc or not parsed_url.netloc.startswith("www."):
-        #     website_url = parsed_url.scheme + "://www." + (parsed_url.netloc or '') + parsed_url.path
-
-        # if not website_url.startswith('http'):
-        #     website_url = 'http://' + website_url
         if hasattr(asyncio, 'run'):
             data_dict = asyncio.run(parse(website_url))
         else:
-            # loop = asyncio.new_event_loop()
-            # data_dict = loop.run_until_complete(parse(website_url))
-            # loop.close()
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
@@ -58,16 +108,12 @@ def run_scraper(request):
             finally:
                 loop.close()
 
-        links = data_dict.get('links')
-        links = list(set(links))
+        # Extract necessary data from the parsed result
+        links = list(set(data_dict.get('links', [])))
         json_response = data_dict.get('json_response')
-        data = data_dict.get('data')
-        pages_text = data_dict.get('pages_text')
-        home_page_text = ''
-        about_page_text = ''
-        products_page_text = ''
-        contact_page_text = ''
+        pages_text = data_dict.get('pages_text', [])
         pages_text = list(filter(None, pages_text))
+        home_page_text, about_page_text, products_page_text, contact_page_text = '', '', '', ''
         for text in pages_text:
             if text[0] == 'home_page':
                 home_page_text = text[1]
@@ -78,7 +124,7 @@ def run_scraper(request):
             elif text[0] == 'products_page':
                 products_page_text = text[1]
 
-        final_json = codecs.decode(json.dumps(data), 'unicode_escape')
+        final_json = codecs.decode(json.dumps(data_dict.get('data')), 'unicode_escape')
         context = {'final_json': final_json, 'raw_links': links,
                    'raw_link_json': json_response,
                    'home_page_text': home_page_text,
@@ -87,9 +133,7 @@ def run_scraper(request):
                    'contact_page_text': contact_page_text,
                    'website_url': website_url,
                    }
-        return render(request, 'scraper_runner.html',
-                      context=context
-                      )
+        return render(request, 'scraper_runner.html', context=context)
     else:
         return render(request, 'scraper_runner.html')
 
@@ -122,7 +166,13 @@ async def fetch_page_content(page_link):
         async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(page_link[1], ssl=False, allow_redirects=True) as response:
                 if response.status == 200:
-                    html = await response.text()
+                    # Try to decode the response text with UTF-8
+                    try:
+                        html = await response.text(encoding='utf-8')
+                    except UnicodeDecodeError:
+                        # If decoding with UTF-8 fails, try with ISO-8859-1
+                        html = await response.text(encoding='ISO-8859-1')
+
                     soup = BeautifulSoup(html, 'html.parser')
                     for script_or_style in soup(["script", "style"]):
                         script_or_style.decompose()
@@ -133,9 +183,8 @@ async def fetch_page_content(page_link):
                 else:
                     print(f"Error fetching page: {response.status}")
                     return ''
-
     except Exception as e:
-        print(f"Error fetching page: {e}")
+        print(f"Error: {e}")
         return ''
 
 

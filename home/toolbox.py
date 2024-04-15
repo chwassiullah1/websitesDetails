@@ -206,32 +206,36 @@ def merge_all_pages_jsons(json_list):
                 json_obj = json.loads(json_obj)
             except json.JSONDecodeError:
                 continue
-
-            for key, value in json_obj.items():
-                # Handle None values consistently
-                if value is None:
-                    continue
-                existing_value = merged_json.get(key)
-                if isinstance(value, list):
-                    if all(isinstance(item, dict) for item in value):
-                        if isinstance(existing_value, str):
-                            existing_value = json.loads(existing_value)
-                        if isinstance(existing_value, list) and all(isinstance(item, dict) for item in existing_value):
-                            merged_json[key] = [merge_dicts(d1, d2) for d1, d2 in zip(existing_value, value)]
+            if json_obj.get('company_legal_name') and json_obj.get('company_short_name'):
+                for key, value in json_obj.items():
+                    # Handle None values consistently
+                    if value is None:
+                        continue
+                    existing_value = merged_json.get(key)
+                    if isinstance(value, list):
+                        if all(isinstance(item, dict) for item in value):
+                            if isinstance(existing_value, str):
+                                existing_value = json.loads(existing_value)
+                            if isinstance(existing_value, list) and all(
+                                    isinstance(item, dict) for item in existing_value):
+                                merged_json[key] = [merge_dicts(d1, d2) for d1, d2 in zip(existing_value, value)]
+                            else:
+                                merged_json[key] = []
+                        merged_json[key] = remove_duplicates(
+                            [standardize_value(v) for v in (existing_value or []) + value])
+                    elif isinstance(value, dict):
+                        if existing_value is None:
+                            merged_json[key] = value
                         else:
-                            merged_json[key] = []
-                    merged_json[key] = remove_duplicates([standardize_value(v) for v in (existing_value or []) + value])
-                elif isinstance(value, dict):
-                    if existing_value is None:
-                        merged_json[key] = value
+                            try:
+                                merged_json[key] = merge_dicts(existing_value, value)
+                            except TypeError:
+                                pass
                     else:
-                        try:
-                            merged_json[key] = merge_dicts(existing_value, value)
-                        except TypeError:
-                            pass
-                else:
-                    if existing_value is None or existing_value != standardize_value(value):
-                        merged_json[key] = standardize_value(value)
+                        if existing_value is None or existing_value != standardize_value(value):
+                            merged_json[key] = standardize_value(value)
+            else:
+                merged_json = {"page_available": False}
     return json.dumps(merged_json).strip()
 
 
@@ -256,14 +260,18 @@ def remove_duplicates(lst):
 async def run_assistant(response, pages_text):
     pages_json = await main(pages_text)
     website_pages_merged_json_str = merge_all_pages_jsons(pages_json)
-    api_hunter_json_str = response.text
-    all_json_merged = merge_website_pages_json_api_hunter_json(api_hunter_json_str,
-                                                               website_pages_merged_json_str)
-    all_json_merged = json.dumps(all_json_merged, ensure_ascii=False, indent=4).lower()
-    all_json_merged = company_longest_name(all_json_merged)
-    all_json_merged = company_shortest_name(all_json_merged)
-    all_json_merged = remove_duplicate_products(all_json_merged)
-    return all_json_merged
+    if not website_pages_merged_json_str == '{"page_available": False}':
+        api_hunter_json_str = response.text
+
+        all_json_merged = merge_website_pages_json_api_hunter_json(api_hunter_json_str,
+                                                                   website_pages_merged_json_str)
+        all_json_merged = json.dumps(all_json_merged, ensure_ascii=False, indent=4).lower()
+        all_json_merged = company_longest_name(all_json_merged)
+        all_json_merged = company_shortest_name(all_json_merged)
+        all_json_merged = remove_duplicate_products(all_json_merged)
+        return all_json_merged
+    else:
+        return {"page_available": False}
 
 
 async def main(pages_text):
