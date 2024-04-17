@@ -200,42 +200,59 @@ def merge_dicts(dict1, dict2):
 
 def merge_all_pages_jsons(json_list):
     merged_json = {}
-    if json_list:
-        for json_obj in json_list:
-            try:
-                json_obj = json.loads(json_obj)
-            except json.JSONDecodeError:
+    company_legal_name = []
+    company_short_name = []
+    for json_obj in json_list:
+        try:
+            json_obj = json.loads(json_obj.replace('null', '""'))
+        except json.JSONDecodeError:
+            continue
+
+        # Check if 'company_legal_name' is present in the current JSON object
+        if 'company_legal_name' in json_obj:
+            if json_obj['company_legal_name'] is not None:
+                company_legal_name.append(json_obj['company_legal_name'])
+
+        if 'company_short_name' in json_obj:
+            if json_obj['company_short_name'] is not None:
+                company_short_name.append(json_obj['company_short_name'])
+
+        # Merge the current JSON object with the merged JSON
+        for key, value in json_obj.items():
+            # Handle None values consistently
+            if value is None:
                 continue
-            if json_obj.get('company_legal_name') and json_obj.get('company_short_name'):
-                for key, value in json_obj.items():
-                    # Handle None values consistently
-                    if value is None:
-                        continue
-                    existing_value = merged_json.get(key)
-                    if isinstance(value, list):
-                        if all(isinstance(item, dict) for item in value):
-                            if isinstance(existing_value, str):
-                                existing_value = json.loads(existing_value)
-                            if isinstance(existing_value, list) and all(
-                                    isinstance(item, dict) for item in existing_value):
-                                merged_json[key] = [merge_dicts(d1, d2) for d1, d2 in zip(existing_value, value)]
-                            else:
-                                merged_json[key] = []
-                        merged_json[key] = remove_duplicates(
-                            [standardize_value(v) for v in (existing_value or []) + value])
-                    elif isinstance(value, dict):
-                        if existing_value is None:
-                            merged_json[key] = value
-                        else:
-                            try:
-                                merged_json[key] = merge_dicts(existing_value, value)
-                            except TypeError:
-                                pass
+            existing_value = merged_json.get(key)
+            if isinstance(value, list):
+                if all(isinstance(item, dict) for item in value):
+                    if isinstance(existing_value, str):
+                        if existing_value:
+                            existing_value = json.loads(existing_value)
+                    if isinstance(existing_value, list) and all(
+                            isinstance(item, dict) for item in existing_value):
+                        merged_json[key] = [merge_dicts(d1, d2) for d1, d2 in zip(existing_value, value)]
                     else:
-                        if existing_value is None or existing_value != standardize_value(value):
-                            merged_json[key] = standardize_value(value)
+                        merged_json[key] = []
+                merged_json[key] = remove_duplicates(
+                    [standardize_value(v) for v in (existing_value or []) + value])
+            elif isinstance(value, dict):
+                if existing_value is None:
+                    merged_json[key] = value
+                else:
+                    try:
+                        merged_json[key] = merge_dicts(existing_value, value)
+                    except TypeError:
+                        pass
             else:
-                merged_json = {"page_available": False}
+                if existing_value is None or existing_value != standardize_value(value):
+                    merged_json[key] = standardize_value(value)
+
+    if company_legal_name is not None:
+        merged_json['company_legal_name'] = company_legal_name
+
+    if company_short_name is not None:
+        merged_json['company_short_name'] = company_short_name
+
     return json.dumps(merged_json).strip()
 
 
@@ -258,8 +275,8 @@ def remove_duplicates(lst):
 # TODO :  OPEN API ASSISTANT
 
 async def run_assistant(response, pages_text):
-    pages_json = await main(pages_text)
-    website_pages_merged_json_str = merge_all_pages_jsons(pages_json)
+    pages_json_with_key = await main(pages_text)
+    website_pages_merged_json_str = merge_all_pages_jsons([js_str[1] for js_str in pages_json_with_key if js_str])
     if not website_pages_merged_json_str == '{"page_available": False}':
         api_hunter_json_str = response.text
 
@@ -269,7 +286,7 @@ async def run_assistant(response, pages_text):
         all_json_merged = company_longest_name(all_json_merged)
         all_json_merged = company_shortest_name(all_json_merged)
         all_json_merged = remove_duplicate_products(all_json_merged)
-        return all_json_merged
+        return all_json_merged, pages_json_with_key
     else:
         return {"page_available": False}
 
@@ -291,7 +308,7 @@ async def process_text(text):
     message = await client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
-        content=text,
+        content=text[1],
     )
 
     run = await client.beta.threads.runs.create(
@@ -313,7 +330,8 @@ async def process_text(text):
     )
     if all_messages:
         response_text = all_messages.data[0].content[0].text.value
-        return response_text.replace('```json', '').replace('```', '').strip()
+        data = text[0], response_text.replace('```json', '').replace('```', '').strip()
+        return data
     else:
         return {}
 

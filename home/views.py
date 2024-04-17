@@ -98,15 +98,30 @@ def run_scraper(request):
         else:
             website_url = f'http://www.{clean_website_url}'
 
-        if hasattr(asyncio, 'run'):
-            data_dict = asyncio.run(parse(website_url))
-        else:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
+        try:
+            if asyncio.get_event_loop().is_closed():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
                 data_dict = loop.run_until_complete(parse(website_url))
-            finally:
-                loop.close()
+            else:
+                data_dict = asyncio.run(parse(website_url))
+        except RuntimeError as e:
+            if str(e) == 'Event loop is closed':
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                data_dict = loop.run_until_complete(parse(website_url))
+            else:
+                raise e
+
+        # if hasattr(asyncio, 'run'):
+        #     data_dict = asyncio.run(parse(website_url))
+        # else:
+        #     loop = asyncio.new_event_loop()
+        #     asyncio.set_event_loop(loop)
+        #     try:
+        #         data_dict = loop.run_until_complete(parse(website_url))
+        #     finally:
+        #         loop.close()
 
         # Extract necessary data from the parsed result
         links = list(set(data_dict.get('links', [])))
@@ -114,6 +129,7 @@ def run_scraper(request):
         pages_text = data_dict.get('pages_text', [])
         pages_text = list(filter(None, pages_text))
         home_page_text, about_page_text, products_page_text, contact_page_text = '', '', '', ''
+        home_page_json, about_page_json, products_page_json, contact_page_json = {}, {}, {}, {}
         for text in pages_text:
             if text[0] == 'home_page':
                 home_page_text = text[1]
@@ -124,6 +140,18 @@ def run_scraper(request):
             elif text[0] == 'products_page':
                 products_page_text = text[1]
 
+        pages_json_with_key = data_dict.get('pages_json_with_key', [])
+        pages_json_with_key = list(filter(None, pages_json_with_key))
+        for json_str in pages_json_with_key:
+            if json_str[0] == 'home_page':
+                home_page_json = json_str[1]
+            elif json_str[0] == 'about_page':
+                about_page_json = json_str[1]
+            elif json_str[0] == 'contact_page':
+                contact_page_json = json_str[1]
+            elif json_str[0] == 'products_page':
+                products_page_json = json_str[1]
+
         final_json = codecs.decode(json.dumps(data_dict.get('data')), 'unicode_escape')
         context = {'final_json': final_json, 'raw_links': links,
                    'raw_link_json': json_response,
@@ -131,6 +159,12 @@ def run_scraper(request):
                    'about_page_text': about_page_text,
                    'products_page_text': products_page_text,
                    'contact_page_text': contact_page_text,
+
+                   'home_page_json': home_page_json,
+                   'about_page_json': about_page_json,
+                   'contact_page_json': contact_page_json,
+                   'products_page_json': products_page_json,
+
                    'website_url': website_url,
                    }
         return render(request, 'scraper_runner.html', context=context)
@@ -238,11 +272,13 @@ async def parse(website_url):
 
         api_hunter_url = f'https://api.hunter.io/v2/domain-search?domain={website_url}&limit=100&api_key=8081bb56d8a84310a6e2ce9ac4950b270a3127e7'
         response = requests.get(api_hunter_url, verify=False, headers=headers)
-        data = await get_api_hunter_data(response, [text[1] for text in pages_text if text])
+        # data = await get_api_hunter_data(response, [text[1] for text in pages_text if text])
+        data, pages_json_with_key = await get_api_hunter_data(response, pages_text)
         data_dict = {
             'links': links,
             'json_response': json_response,
             'data': data,
+            'pages_json_with_key': pages_json_with_key,
             'pages_text': pages_text
         }
         return data_dict
