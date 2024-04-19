@@ -1,9 +1,10 @@
 import json
 import asyncio
+from datetime import datetime
+from django.http import JsonResponse
 import aiohttp
 import re
 from urllib.parse import urljoin
-
 import scrapy
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -14,12 +15,9 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from home.forms import CustomSignupForm
+from home.models import ProcessTwoJobs
 from home.toolbox import links_determiner_assistant, run_assistant, filter_links, get_links_and_emails, clean_url
 import logging
-from urllib.parse import urlparse
-import socket
-import ssl
-from home.url_determiner import evaluate_preference
 import codecs
 
 logging.basicConfig(level=logging.INFO)
@@ -98,30 +96,30 @@ def run_scraper(request):
         else:
             website_url = f'http://www.{clean_website_url}'
 
-        try:
-            if asyncio.get_event_loop().is_closed():
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                data_dict = loop.run_until_complete(parse(website_url))
-            else:
-                data_dict = asyncio.run(parse(website_url))
-        except RuntimeError as e:
-            if str(e) == 'Event loop is closed':
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                data_dict = loop.run_until_complete(parse(website_url))
-            else:
-                raise e
-
-        # if hasattr(asyncio, 'run'):
-        #     data_dict = asyncio.run(parse(website_url))
-        # else:
-        #     loop = asyncio.new_event_loop()
-        #     asyncio.set_event_loop(loop)
-        #     try:
+        # try:
+        #     if asyncio.get_event_loop().is_closed():
+        #         loop = asyncio.new_event_loop()
+        #         asyncio.set_event_loop(loop)
         #         data_dict = loop.run_until_complete(parse(website_url))
-        #     finally:
-        #         loop.close()
+        #     else:
+        #         data_dict = asyncio.run(parse(website_url))
+        # except RuntimeError as e:
+        #     if str(e) == 'Event loop is closed':
+        #         loop = asyncio.new_event_loop()
+        #         asyncio.set_event_loop(loop)
+        #         data_dict = loop.run_until_complete(parse(website_url))
+        #     else:
+        #         raise e
+
+        if hasattr(asyncio, 'run'):
+            data_dict = asyncio.run(parse(website_url))
+        else:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                data_dict = loop.run_until_complete(parse(website_url))
+            finally:
+                loop.close()
 
         # Extract necessary data from the parsed result
         links = list(set(data_dict.get('links', [])))
@@ -234,7 +232,8 @@ async def parse(website_url):
     # try:
     try:
         response = requests.get(website_url, allow_redirects=True, verify=False, headers=headers)
-    except:
+    except Exception as e:
+        print(e)
         data_dict = {
             'links': '',
             'json_response': '',
@@ -311,17 +310,26 @@ async def get_api_hunter_data(response, pages_text):
 @login_required(login_url='login')
 def scrape_email_and_links(request):
     if request.method == "POST":
-        website_url = request.POST.get('website').rstrip('/')
-        if not website_url.startswith('http'):
-            website_url = 'http://' + website_url
-        unique_links, unique_mails = get_links_and_emails(website_url)
-        context = {
-            'website_url': website_url,
-            'unique_links': unique_links,
-            'unique_mails': unique_mails
-        }
+        # website_url = request.POST.get('website').rstrip('/')
+
+        urls = request.POST.get('urls')
+        status = 0
+        now = datetime.now().strftime('%Y-%m-%d')
+        instance = ProcessTwoJobs.objects.create(
+            urls=urls,
+            status=status,
+            created_at=now
+        )
+        instance.save()
+        # if not website_url.startswith('http'):
+        #     website_url = 'http://' + website_url
+        # unique_links, unique_mails = get_links_and_emails(website_url)
+        # context = {
+        #     'website_url': website_url,
+        #     'unique_links': unique_links,
+        #     'unique_mails': unique_mails
+        # }
         return render(request, 'scrape_emails_and_links.html',
-                      context=context
                       )
     else:
         return render(request, 'scrape_emails_and_links.html')
@@ -331,6 +339,22 @@ class SignUpView(CreateView):
     form_class = CustomSignupForm
     success_url = reverse_lazy('login')
     template_name = 'registration.html'
+
+
+# def view_jobs(request):
+#     jobs = ProcessTwoJobs.objects.all().order_by('-created_at')
+#     return render(request, 'jobs.html',context={'jobs': jobs})
+
+def view_jobs(request):
+    jobs = ProcessTwoJobs.objects.all().order_by('-id')
+    return render(request, 'jobs.html', {'jobs': jobs})
+
+
+# def view_jobs(request):
+#     jobs = ProcessTwoJobs.objects.all().order_by('-created_at')
+#     # Serialize data if needed
+#     serialized_jobs = [{"id": job.id, "urls": job.Urls, "status": job.status, "date": job.created_at} for job in jobs]
+#     return JsonResponse({"jobs": serialized_jobs})
 
 
 def logout_view(request):
