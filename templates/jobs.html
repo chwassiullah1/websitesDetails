@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Jobs</title>
+{% endblock title %}
+{% block body %}
+    <div class="container-fluid">
+        <div class="container-fluid">
+            <div class="row mt-5 justify-content-center">
+                <div class="col-md-12">
+                    <div class="container mt-3">
+                        <div class="row justify-content-center">
+                            <div class="col-md-12">
+                                <div class="card border-secondary">
+                                    <div class="card-header navbar-dark bg-dark text-white">
+                                        <h4>Recent Jobs</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <table id="jobs-table" class="table">
+                                            <thead>
+                                            <tr>
+                                                <th scope="col">#</th>
+                                                <th scope="col">URLs</th>
+                                                <th scope="col">Status</th>
+                                                <th scope="col">Unique Links</th>
+                                                <th scope="col">Unique Emails</th>
+                                                <th scope="col">Date</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody id="jobs-table-body">
+                                            {% for job in jobs %}
+                                                <tr>
+                                                    <th scope="row">{{ job.id }}</th>
+                                                    <td>
+                                                        <a data-bs-toggle="modal"
+                                                           data-bs-target="#exampleModal{{ job.id }}"
+                                                           style="color: black; text-decoration: none;"
+                                                           onmouseover="this.style.color='blue'"
+                                                           onmouseout="this.style.color='black'">
+                                                            <strong> View URLs</strong>
+                                                        </a>
+                                                        <div class="modal fade" id="exampleModal{{ job.id }}"
+                                                             tabindex="-1"
+                                                             aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                                            <div class="modal-dialog">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header">
+                                                                        <h5 class="modal-title" id="exampleModalLabel">
+                                                                            URLs</h5>
+                                                                    </div>
+                                                                    <div class="modal-body">
+                                                                        <p>{{ job.urls }}</p>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button id="closeButton" type="button"
+                                                                                class="btn btn-secondary"
+                                                                                data-bs-dismiss="modal">Close
+                                                                        </button>
+
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ job.status }}</td>
+                                                    <td>{{ job.unique_links }}</td>
+                                                    <td>{{ job.unique_emails }}</td>
+                                                    <td>{{ job.created_at }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock body %}
+{% block js %}
+    <script>
+        $(document).ready(function () {
+            // Variable to hold the interval ID
+            var refreshInterval;
+
+            function startRefreshing() {
+                refreshInterval = setInterval(updateTable, 2000);
+            }
+
+            // Function to update table data
+            function updateTable() {
+                $.ajax({
+                    url: 'view_jobs',
+                    type: 'GET',
+                    dataType: 'html', // Expect HTML response
+                    success: function (data) {
+                        // Replace the content of tbody with new data
+                        $('#jobs-table-body').html($(data).find('#jobs-table-body').html());
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
+
+            // Call updateTable function every 2 seconds
+            // Start refreshing initially
+            startRefreshing();
+            $(document).on('click', 'a[data-bs-toggle="modal"]', function (event) {
+                clearInterval(refreshInterval);
+                event.stopPropagation();
+            });
+
+            // Event listener for close button
+            $(document).on('click', '#closeButton', function () {
+                startRefreshing();
+            });
+        });
+
+
+    </script>
+
+{% endblock js %}
