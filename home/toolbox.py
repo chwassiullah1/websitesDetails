@@ -316,13 +316,18 @@ def merge_all_pages_jsons(json_list):
 
     merged_data["company_legal_name"] = company_longest_name(company_legal_name)
     merged_data["company_short_name"] = company_shortest_name(company_short_name)
-    merged_data["company_founded_year"] = min(int(year) for year in company_founded_year)
+    company_founded_year = [int(year) for year in company_founded_year if year.isdigit()]
+    if company_founded_year:
+        company_founded_year = min(company_founded_year)
+    else:
+        company_founded_year = ''
+    merged_data["company_founded_year"] = company_founded_year
     merged_data["product"] = list(set(product))
     merged_data["service"] = list(set(service))
     merged_data["company_code"] = list(set(company_code))
-    unique_combinations = {tuple(sorted(d.items())) for d in address}
+    unique_combinations = {tuple(sorted(d.items())) for d in address if isinstance(d, dict)}
     unique_address = [dict(comb) for comb in unique_combinations]
-    merged_data["address"] =unique_address
+    merged_data["address"] = unique_address
     merged_data["e-mail"] = list(set(e_mail))
     merged_data["company_phone_numbers"] = list(set(company_phone_numbers))
     merged_data["company_description"] = list(set(company_description))

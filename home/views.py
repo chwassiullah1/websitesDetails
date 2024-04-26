@@ -1,7 +1,6 @@
 import json
 import asyncio
 from datetime import datetime
-from django.http import JsonResponse
 import aiohttp
 import re
 from urllib.parse import urljoin
@@ -27,49 +26,6 @@ def home(request):
     return render(request, 'index.html')
 
 
-# def get_longer_url_text(url):
-#     http_url = 'http://' + url
-#     https_url = 'https://' + url
-#     try:
-#         response_http = requests.get(http_url, verify=False)
-#         response_https = requests.get(https_url, verify=False)
-#     except requests.exceptions.RequestException as e:
-#         print("Error making requests:", e)
-#         return None
-#     # if len(response_http.text) > len(response_https.text):
-#     #     return http_url
-#     # else:
-#     #     return https_url
-#     soup1 = BeautifulSoup(response_http.text, 'html.parser')
-#     http_links = list(set([link.get('href') for link in soup1.find_all('a')]))
-#     http_links = [urljoin(response_http.url, link) for link in http_links if link and not link.startswith('mailto:')]
-#     http_links = filter_links(http_links, response_http.url)
-#
-#     soup2 = BeautifulSoup(response_https.text, 'html.parser')
-#     https_links = list(set([link.get('href') for link in soup2.find_all('a')]))
-#     https_links = [urljoin(response_https.url, link) for link in https_links if link and not link.startswith('mailto:')]
-#     https_links = filter_links(https_links, response_https.url)
-#
-#     if len(http_links) == len(https_links):
-#         return https_url
-#     elif len(http_links) > len(https_links):
-#         return http_url
-#     else:
-#         return https_url
-
-# def has_valid_ssl(url):
-#     try:
-#         ctx = ssl.create_default_context()
-#         with ctx.wrap_socket(socket.socket(), server_hostname=url) as s:
-#             s.connect((url, 443))
-#         # print(url+" has valid SSL")
-#         return True
-#
-#     except Exception as e:
-#         return False
-#         # print(url+": has INVALID SSL, error:"+str(e))
-
-
 def check_ssl(url):
     url = 'https://w3techs.com/sites/info/{}'.format(url)
     response = requests.get(url=url)
@@ -88,29 +44,11 @@ def run_scraper(request):
     if request.method == "POST":
         website_url = request.POST.get('website')
         clean_website_url = clean_url(website_url)
-        # protocol, domain = evaluate_preference(clean_website_url)
-        # website_url = f'{protocol}://{domain}'
         ssl_info = check_ssl(clean_website_url)
         if ssl_info:
             website_url = f'https://www.{clean_website_url}'
         else:
             website_url = f'http://www.{clean_website_url}'
-
-        # try:
-        #     if asyncio.get_event_loop().is_closed():
-        #         loop = asyncio.new_event_loop()
-        #         asyncio.set_event_loop(loop)
-        #         data_dict = loop.run_until_complete(parse(website_url))
-        #     else:
-        #         data_dict = asyncio.run(parse(website_url))
-        # except RuntimeError as e:
-        #     if str(e) == 'Event loop is closed':
-        #         loop = asyncio.new_event_loop()
-        #         asyncio.set_event_loop(loop)
-        #         data_dict = loop.run_until_complete(parse(website_url))
-        #     else:
-        #         raise e
-
         if hasattr(asyncio, 'run'):
             data_dict = asyncio.run(parse(website_url))
         else:
@@ -120,8 +58,6 @@ def run_scraper(request):
                 data_dict = loop.run_until_complete(parse(website_url))
             finally:
                 loop.close()
-
-        # Extract necessary data from the parsed result
         links = list(set(data_dict.get('links', [])))
         json_response = data_dict.get('json_response')
         pages_text = data_dict.get('pages_text', [])
@@ -170,25 +106,6 @@ def run_scraper(request):
         return render(request, 'scraper_runner.html')
 
 
-# async def fetch_page_content(page_link):
-#     headers = {
-#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-#     }
-#
-#     try:
-#         response = requests.get(page_link, verify=False, headers=headers)
-#         soup = BeautifulSoup(response.content, 'html.parser')
-#         for script_or_style in soup(["script", "style"]):
-#             script_or_style.decompose()
-#         text = soup.get_text()
-#         clean_text = re.sub(r'\s+', ' ', text)
-#         # clean_text = remove_html_tags(str())
-#         return clean_text.strip()
-#
-#     except Exception as e:
-#         print(f"Error fetching page: {e}")
-#         return None
-
 async def fetch_page_content(page_link):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
@@ -224,12 +141,7 @@ async def parse(website_url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
     }
-    # pages_text = []
     assistant_page_links = []
-    # response = requests.get(website_url, verify=False)
-    # page_response = Selector(text=response.text)
-    # links = list(set(page_response.css('a::attr(href)').getall()))
-    # try:
     try:
         response = requests.get(website_url, allow_redirects=True, verify=False, headers=headers)
     except Exception as e:
@@ -244,6 +156,8 @@ async def parse(website_url):
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
         links = list(set([link.get('href') for link in soup.find_all('a')]))
+        if not links:
+            links = list(set([link.get('href') for link in soup.find_all('area')]))
         links = [urljoin(response.url, link) for link in links if link and not link.startswith('mailto:')]
         links = filter_links(links, website_url)
 
@@ -268,10 +182,9 @@ async def parse(website_url):
 
         tasks = [fetch_page_content(page_link) for page_link in assistant_page_links]
         pages_text = await asyncio.gather(*tasks)
-
+        pages_text = list(filter(None, pages_text))
         api_hunter_url = f'https://api.hunter.io/v2/domain-search?domain={website_url}&limit=100&api_key=8081bb56d8a84310a6e2ce9ac4950b270a3127e7'
         response = requests.get(api_hunter_url, verify=False, headers=headers)
-        # data = await get_api_hunter_data(response, [text[1] for text in pages_text if text])
         data, pages_json_with_key = await get_api_hunter_data(response, pages_text)
         data_dict = {
             'links': links,
@@ -290,16 +203,6 @@ async def parse(website_url):
         }
         return data_dict
 
-    # except Exception as e:
-    #     print(e)
-    #     data_dict = {
-    #         'links': '',
-    #         'json_response': '',
-    #         'data': {"page_available": False},
-    #         'pages_text': ''
-    #     }
-    #     return data_dict
-
 
 async def get_api_hunter_data(response, pages_text):
     final_json = await run_assistant(response, pages_text)  # TODO : RUN ASSISTANT AND GET FINAL JSON
@@ -308,10 +211,8 @@ async def get_api_hunter_data(response, pages_text):
 
 @csrf_exempt
 @login_required(login_url='login')
-def scrape_email_and_links(request):
+def add_jobs(request):
     if request.method == "POST":
-        # website_url = request.POST.get('website').rstrip('/')
-
         urls = request.POST.get('urls')
         status = 0
         now = datetime.now().strftime('%Y-%m-%d')
@@ -321,18 +222,9 @@ def scrape_email_and_links(request):
             created_at=now
         )
         instance.save()
-        # if not website_url.startswith('http'):
-        #     website_url = 'http://' + website_url
-        # unique_links, unique_mails = get_links_and_emails(website_url)
-        # context = {
-        #     'website_url': website_url,
-        #     'unique_links': unique_links,
-        #     'unique_mails': unique_mails
-        # }
-        return render(request, 'scrape_emails_and_links.html',
-                      )
+        return render(request, 'add_jobs.html')
     else:
-        return render(request, 'scrape_emails_and_links.html')
+        return render(request, 'add_jobs.html')
 
 
 class SignUpView(CreateView):
@@ -341,20 +233,28 @@ class SignUpView(CreateView):
     template_name = 'registration.html'
 
 
-# def view_jobs(request):
-#     jobs = ProcessTwoJobs.objects.all().order_by('-created_at')
-#     return render(request, 'jobs.html',context={'jobs': jobs})
-
+@csrf_exempt
+@login_required(login_url='login')
 def view_jobs(request):
     jobs = ProcessTwoJobs.objects.all().order_by('-id')
     return render(request, 'jobs.html', {'jobs': jobs})
 
 
-# def view_jobs(request):
-#     jobs = ProcessTwoJobs.objects.all().order_by('-created_at')
-#     # Serialize data if needed
-#     serialized_jobs = [{"id": job.id, "urls": job.Urls, "status": job.status, "date": job.created_at} for job in jobs]
-#     return JsonResponse({"jobs": serialized_jobs})
+@csrf_exempt
+@login_required(login_url='login')
+def add_and_review(request, pk):
+    job = ProcessTwoJobs.objects.get(id=pk)
+    if request.method == 'POST':
+        unique_links = request.POST.get('links')
+        unique_emails = request.POST.get('emails')
+        job.unique_links = str(unique_links.split('\n'))
+        job.unique_emails = str(unique_emails.split('\n'))
+        job.save()
+        context = {'links': '\n'.join(eval(job.unique_links)), 'emails': '\n'.join(eval(job.unique_emails))}
+        return render(request, 'add_and_review.html', context=context)
+    else:
+        context = {'links': '\n'.join(eval(job.unique_links)), 'emails': '\n'.join(eval(job.unique_emails))}
+        return render(request, 'add_and_review.html', context=context)
 
 
 def logout_view(request):

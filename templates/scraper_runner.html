@@ -23,7 +23,8 @@
                                                 <label for="exampleFormControlInput1" class="form-label"><strong>Enter
                                                     Website
                                                     URL</strong></label>
-                                                <input type="text" class="form-control" id="exampleFormControlInput1"
+                                                <input required type="text" class="form-control"
+                                                       id="exampleFormControlInput1"
                                                        placeholder="https://example.com" name="website"
                                                        value="{{ website_url }}">
                                             </div>
@@ -32,8 +33,7 @@
                                         </form>
 
                                         <div class="mb-3">
-                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Page+Hunter
-                                                Merged JSON</strong></label>
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Merged JSON</strong></label>
                                             <textarea class="form-control" id="exampleFormControlTextarea1"
                                                       rows="3">{{ final_json }}
                                             </textarea>
@@ -47,23 +47,25 @@
                                         <div class="mb-3">
                                             <label for="exampleFormControlTextarea1" class="form-label"><strong>Links
                                                 Result
-                                                from OpenAI</strong></label>
+                                                from AI</strong></label>
                                             <textarea class="form-control" id="exampleFormControlTextarea1"
                                                       rows="3">{{ raw_link_json }}</textarea>
                                         </div>
 
                                         <div class="mb-3">
-                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text and JSON of
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text and
+                                                JSON of
                                                 home-page</strong></label>
                                             <textarea class="form-control" id="exampleFormControlTextarea1"
                                                       rows="3">{{ home_page_text }}</textarea>
-                                            
+
                                             <textarea class="form-control mt-3" id="exampleFormControlTextarea1"
                                                       rows="3">{{ home_page_json }}</textarea>
                                         </div>
 
                                         <div class="mb-3">
-                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text  and JSON of
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text and
+                                                JSON of
                                                 about-us-page</strong></label>
                                             <textarea class="form-control" id="exampleFormControlTextarea1"
                                                       rows="3">{{ about_page_text }}</textarea>
@@ -72,7 +74,8 @@
                                         </div>
 
                                         <div class="mb-3">
-                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text  and JSON of
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text and
+                                                JSON of
                                                 products-page</strong></label>
                                             <textarea class="form-control" id="exampleFormControlTextarea1"
                                                       rows="3">{{ products_page_text }}</textarea>
@@ -81,7 +84,8 @@
                                         </div>
 
                                         <div class="mb-3">
-                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text and JSON of
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Text and
+                                                JSON of
                                                 contact-us-page</strong></label>
                                             <textarea class="form-control" id="exampleFormControlTextarea1"
                                                       rows="3">{{ contact_page_text }}</textarea>

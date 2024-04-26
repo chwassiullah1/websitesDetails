@@ -7,9 +7,10 @@ from home.views import SignUpView
 urlpatterns = [
     path('', views.home, name='home'),
     path('run_scraper', views.run_scraper, name='run_scraper'),
-    path('scrape_email_and_links', views.scrape_email_and_links, name='scrape_email_and_links'),
+    path('add_jobs', views.add_jobs, name='add_jobs'),
     path('signup', SignUpView.as_view(), name='signup'),
     path('view_jobs', views.view_jobs, name='view_jobs'),
+    path('add_and_review/<int:pk>/', views.add_and_review, name='add_and_review'),
 
     path('login',
          LoginView.as_view(template_name='login.html', success_url='home', authentication_form=CustomLoginForm),

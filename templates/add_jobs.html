@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Jobs</title>
+{% endblock title %}
+{% block body %}
+    <div class="container-fluid">
+        <div class="container-fluid">
+            <div class="row mt-5 justify-content-center">
+                <div class="col-md-12">
+                    <div class="container mt-3">
+                        <div class="row justify-content-center">
+                            <div class="col-md-12">
+                                <div class="card border-secondary">
+                                    <div class="card-header navbar-dark bg-dark text-white">
+                                        <h4>Add New Jobs</h4>
+                                    </div>
+                                    <div class="card-body" style="height:400px; overflow-y: auto;">
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label for="exampleFormControlInput1" class="form-label"><strong>Enter
+                                                    List of URLs</strong></label>
+                                                <textarea  rows="10" class="form-control" id="exampleFormControlInput1"
+                                                          placeholder="[https://example.com]" name="urls"
+                                                ></textarea>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Add</button>
+                                            <a href="{% url 'add_jobs' %}"
+                                               class="btn btn-danger">Clear</a>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+{% block js %}
+{% endblock js %}

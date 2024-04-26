@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+<title>Add & Review</title>
+{% endblock title %}
+{% block body %}
+<div class="container-fluid">
+    <div class="row mt-5 justify-content-center">
+        <div class="col-md-8">
+            <div class="container mt-3">
+                <div class="row justify-content-center">
+                    <div class="col-md-12">
+                        <div class="card border-secondary">
+                            <div class="card-header navbar-dark bg-dark text-white">
+                                <h4>Links and Emails</h4>
+                            </div>
+                            <div class="card-body">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <div class="row">
+
+                                        <div class="col">
+                                            <div class="mb-3">
+                                                <label for="exampleFormControlInput1" class="form-label"><strong>Enter
+                                                    List of URLs</strong></label>
+                                                <textarea style="height: 250px; width: 100%"
+                                                          class="form-control" id="exampleFormControlInput1"
+                                                          name="links"
+                                                >{{links}}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="mb-3">
+                                                <label for="exampleFormControlInput2" class="form-label"><strong>Enter
+                                                    List of URLs</strong></label>
+                                                <textarea style="height: 250px; width: 100%"
+                                                          class="form-control" id="exampleFormControlInput2"
+                                                          name="emails"
+                                                >{{emails}}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <button type="submit" class="btn btn-primary">Add Websites to Process 1 queue
+                                            and Save Emails to Database
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock body %}
+{% block js %}
+
+{% endblock js %}
