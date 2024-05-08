@@ -14,8 +14,9 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from home.forms import CustomSignupForm
-from home.models import ProcessTwoJobs
-from home.toolbox import links_determiner_assistant, run_assistant, filter_links, get_links_and_emails, clean_url
+from home.models import ProcessTwoJobs, EmailDetails
+from home.toolbox import links_determiner_assistant, run_assistant, filter_links, clean_url, \
+    generate_emails, validate_email_with_api
 import logging
 import codecs
 
@@ -255,6 +256,44 @@ def add_and_review(request, pk):
     else:
         context = {'links': '\n'.join(eval(job.unique_links)), 'emails': '\n'.join(eval(job.unique_emails))}
         return render(request, 'add_and_review.html', context=context)
+
+
+@csrf_exempt
+@login_required(login_url='login')
+def validate_emails(request):
+    emails = []
+    json_responses = []
+    if request.method == 'POST':
+        if 'form1' in request.POST:
+            input1 = request.POST.get('input1')
+            input2 = request.POST.get('input2')
+            input3 = request.POST.get('input3')
+            result = generate_emails(input1, input2, input3)
+            emails.extend(result)
+            # return render(request, 'validate_email.html')
+        elif 'form2' in request.POST:
+            email = request.POST.get('email')
+            emails.append(email)
+            # return render(request, 'validate_email.html')
+        email_results = validate_email_with_api(emails)  # return tuple ( inputEmail , jsonResponse )
+        for email_result in email_results:
+            json_responses.append(email_result[1])
+            try:
+                email_obj = EmailDetails.objects.get(input_emails=email_result[0])
+            except:
+                email_obj = None
+            if not email_obj:
+                obj = EmailDetails.objects.create(input_emails=email_result[0], email_detail=email_result[1])
+                obj.save()
+
+        extracted_data = [{"address": entry.get("address"), "status": entry.get("status")} for entry in json_responses]
+
+        return render(request, 'validate_email.html', context={'extracted_data', extracted_data})
+
+
+
+    else:
+        return render(request, 'validate_email.html')
 
 
 def logout_view(request):

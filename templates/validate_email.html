@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Validata Email</title>
+{% endblock title %}
+
+{% block body %}
+    <div class="container">
+        <div class="row mt-5 justify-content-center">
+            <div class="col-md-6">
+                <div class="container mt-3">
+                    <div class="row justify-content-center">
+                        <div class="col-md-12">
+                            <div class="card border-secondary">
+                                <div class="card-header navbar-dark bg-dark text-white">
+                                    <h4>Make & validate Email</h4>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlInput1" class="form-label">Input 1</label>
+                                            <input type="text" class="form-control"
+                                                   id="exampleFormControlInput1"
+                                                   placeholder="ercan" name="input1">
+                                            <label for="exampleFormControlInput2" class="form-label">Input 2</label>
+                                            <input required type="text" class="form-control"
+                                                   id="exampleFormControlInput2"
+                                                   placeholder="akkara" name="input2">
+                                            <label for="exampleFormControlInput3" class="form-label">Input 3</label>
+                                            <input required type="text" class="form-control"
+                                                   id="exampleFormControlInput3"
+                                                   placeholder="kara.com" name="input3">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary" name="form1">Submit</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="container mt-3">
+                    <div class="row justify-content-center">
+                        <div class="col-md-12">
+                            <div class="card border-secondary">
+                                <div class="card-header navbar-dark bg-dark text-white">
+                                    <h4>Validate Email</h4>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="exampleFormControlInput1" class="form-label">Email
+                                                address</label>
+                                            <input required type="email" class="form-control"
+                                                   id="exampleFormControlInput1"
+                                                   placeholder="name@example.com" name="email">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary" name="form2">Submit</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="container">
+            <div class="container-fluid">
+                <div class="row mt-5 justify-content-center">
+                    <div class="col-md-12">
+                        <div class="container mt-3">
+                            <div class="row justify-content-center">
+                                <div class="col-md-12">
+                                    <div class="card border-secondary">
+                                        <div class="card-body" style="height:auto; overflow-y: auto;">
+                                            <div class="mb-3">
+                                                <table class="table">
+                                                    <thead>
+                                                    <tr>
+
+                                                        <th scope="col">Email Address</th>
+                                                        <th scope="col">Status</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    {% for data in extracted_data %}
+                                                        <tr>
+
+                                                            <td> {{ data.address }}</td>
+                                                            <td> {{ entry.status }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+{% block js %}
+{% endblock js %}

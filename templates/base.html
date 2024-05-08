@@ -46,6 +46,12 @@
                            aria-current="page"
                            href="{% url 'view_jobs' %}">View Jobs</a>
                     </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/validate_emails' %}active{% endif %}"
+                           aria-current="page"
+                           href="{% url 'validate_emails' %}">Validate Email</a>
+                    </li>
                     {#                    <li class="nav-item dropdown">#}
                     {#                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"#}
                     {#                           aria-expanded="false">#}

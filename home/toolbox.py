@@ -2,6 +2,8 @@ import asyncio
 import json
 import re
 from urllib.parse import urlparse
+
+import requests
 from fuzzywuzzy import fuzz
 from openai import AsyncOpenAI, OpenAI
 from selenium import webdriver
@@ -11,7 +13,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-api_key = ''
+
 
 
 def remove_html_tags(text):
@@ -472,3 +474,31 @@ def clean_url(url):
     if domain.startswith('www.'):
         domain = domain[4:]
     return domain
+
+
+def validate_email_with_api(emails):
+    email_results = []
+    for email in emails:
+        try:
+            url = f'https://api.zerobounce.net/v2/validate?api_key={zero_bounce_api_key}&email={email}'
+            response = requests.get(url)
+            if response.status_code == 200:
+                email_json = response.text
+                data = email, email_json
+                email_results.append(data)
+        except:
+            data = email, '{}'
+            email_results.append(data)
+            continue
+    return email_results
+
+
+def generate_emails(input1, input2, input3):
+    domain = input3.strip()
+    input1 = input1.strip().lower()
+    input2 = input2.strip().lower().replace(" ", ".")
+    combinations = set()
+    for char in input1:
+        combinations.add(f"{input1}.{input2}@{domain}")
+        combinations.add(f"{char}{input2}@{domain}")
+    return list(combinations)
