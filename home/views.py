@@ -250,7 +250,14 @@ def add_and_review(request, pk):
         unique_emails = request.POST.get('emails')
         job.unique_links = str(unique_links.split('\n'))
         job.unique_emails = str(unique_emails.split('\n'))
+        emails = unique_emails.split('\n')
         job.save()
+        for email in emails:
+            domain = None
+            if email:
+                domain = email.strip().split('@')[1].strip()
+            obj = EmailDetails.objects.create(input_emails=email, type=3, domain=domain)
+            obj.save()
         context = {'links': '\n'.join(eval(job.unique_links)), 'emails': '\n'.join(eval(job.unique_emails))}
         return render(request, 'add_and_review.html', context=context)
     else:
