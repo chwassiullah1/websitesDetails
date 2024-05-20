@@ -15,8 +15,10 @@ class ProcessTwoJobs(models.Model):
 
 
 class EmailDetails(models.Model):
-    input_emails = models.TextField()
+    input_emails = models.TextField(null=True, blank=True)
     email_detail = models.TextField(null=True, blank=True)
+    domain = models.TextField(null=True, blank=True)
+    type = models.IntegerField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

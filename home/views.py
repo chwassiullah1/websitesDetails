@@ -264,34 +264,38 @@ def validate_emails(request):
     emails = []
     json_responses = []
     if request.method == 'POST':
+        type = None
         if 'form1' in request.POST:
             input1 = request.POST.get('input1')
             input2 = request.POST.get('input2')
             input3 = request.POST.get('input3')
             result = generate_emails(input1, input2, input3)
             emails.extend(result)
+            type = 1
             # return render(request, 'validate_email.html')
         elif 'form2' in request.POST:
             email = request.POST.get('email')
             emails.append(email)
             # return render(request, 'validate_email.html')
+            type = 2
         email_results = validate_email_with_api(emails)  # return tuple ( inputEmail , jsonResponse )
         for email_result in email_results:
             json_responses.append(email_result[1])
+            domain = ''
             try:
+                domain = email_result[0].split('@')[1].strip()
                 email_obj = EmailDetails.objects.get(input_emails=email_result[0])
             except:
                 email_obj = None
             if not email_obj:
-                obj = EmailDetails.objects.create(input_emails=email_result[0], email_detail=email_result[1])
+                obj = EmailDetails.objects.create(input_emails=email_result[0], email_detail=email_result[1], type=type,
+                                                  domain=domain)
                 obj.save()
+        parsed_responses = [json.loads(response) for response in json_responses]
+        extracted_data = [{"address": entry.get("address"), "status": entry.get("status")} for entry in
+                          parsed_responses]
 
-        extracted_data = [{"address": entry.get("address"), "status": entry.get("status")} for entry in json_responses]
-
-        return render(request, 'validate_email.html', context={'extracted_data', extracted_data})
-
-
-
+        return render(request, 'validate_email.html', context={'extracted_data': extracted_data})
     else:
         return render(request, 'validate_email.html')
 
