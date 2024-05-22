@@ -494,14 +494,16 @@ def validate_email_with_api(emails):
 
 
 def generate_emails(input1, input2, input3):
-    domain = input3.strip()
-    input1 = input1.strip().lower()
-    input2 = input2.strip().lower().replace(" ", ".")
-    variations = set()
-    for char in input1:
-        variations.add(f"{char}{input2}@{domain}")
-        variations.add(f"{input1}.{input2}@{domain}")
-        variations.add(f"{input1}-{input2}@{domain}")
-        variations.add(f"{input1}_{input2}@{domain}")
-    variations.add(f"{input1}{input2}@{domain}")
-    return list(variations)
+    emails = []
+    emails.append(f'{input1}@{input3}')
+    emails.append(f'{input2}@{input3}')
+    emails.append(f'{input1}{input2}@{input3}')
+    emails.append(f'{input1}.{input2}@{input3}')
+    emails.append(f'{input1[0]}{input2}@{input3}')
+    emails.append(f'{input1[0]}.{input2}@{input3}')
+    emails.append(f'{input1}{input2[0]}@{input3}')
+    emails.append(f'{input2}{input1}@{input3}')
+    emails.append(f'{input2}.{input1}@{input3}')
+    emails.append(f'{input1}-{input2}@{input3}')
+    emails.append(f'{input1}_{input2}@{input3}')
+    return emails
