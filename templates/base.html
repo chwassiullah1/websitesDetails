@@ -46,11 +46,25 @@
                            aria-current="page"
                            href="{% url 'view_jobs' %}">View Jobs</a>
                     </li>
-
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/domain_queue' %}active{% endif %}"
+                           aria-current="page"
+                           href="{% url 'domain_queue' %}">Check Domain Queue</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/validate_emails' %}active{% endif %}"
                            aria-current="page"
                            href="{% url 'validate_emails' %}">Validate Email</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/search_email' %}active{% endif %}"
+                           aria-current="page"
+                           href="{% url 'search_email' %}">Search Email</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/search_data' %}active{% endif %}"
+                           aria-current="page"
+                           href="{% url 'search_data' %}">Search Data</a>
                     </li>
                     {#                    <li class="nav-item dropdown">#}
                     {#                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"#}

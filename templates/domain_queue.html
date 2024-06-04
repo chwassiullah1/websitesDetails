@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Jobs</title>
+{% endblock title %}
+{% block body %}
+    <div class="container-fluid">
+        <div class="container-fluid">
+            <div class="row mt-5 justify-content-center">
+                <div class="col-md-12">
+                    <div class="container mt-3">
+                        <div class="row justify-content-center">
+                            <div class="col-md-12">
+                                <div class="card border-secondary">
+                                    <div class="card-header navbar-dark bg-dark text-white">
+                                        <h4>Domains</h4>
+                                    </div>
+                                    <div class="card-body" style="height:500px; overflow-y: auto;">
+                                        <table id="jobs-table" class="table">
+                                            <thead>
+                                            <tr>
+                                                <th scope="col">#</th>
+                                                <th scope="col">Domain</th>
+                                                <th scope="col">Processed</th>
+                                                <th scope="col">priority</th>
+                                                <th scope="col">Process Start</th>
+                                                <th scope="col">Process Finished</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody id="queue-table-body">
+                                            {% for domain in domains %}
+                                                <tr>
+                                                    <th scope="row">{{ domain.id }}</th>
+                                                    <td><strong>{{ domain.domain }}</strong></td>
+                                                    <td>{{ domain.processed }}</td>
+                                                    <td> {{ domain.priority }}</td>
+                                                    <td>{{ domain.process_start|date:"F j, Y, g:i:s a" }}</td>
+                                                    <td>{{ domain.process_finished|date:"F j, Y, g:i:s a" }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+{% block js %}
+    <script>
+        $(document).ready(function () {
+            var refreshInterval;
+
+            function startRefreshing() {
+                refreshInterval = setInterval(updateTable, 2000);
+            }
+
+            function updateTable() {
+                $.ajax({
+                    url: 'domain_queue',
+                    type: 'GET',
+                    dataType: 'html',
+                    success: function (data) {
+                        $('#queue-table-body').html($(data).find('#queue-table-body').html());
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
+
+            startRefreshing();
+            $(document).on('click', 'a[data-bs-toggle="modal"]', function (event) {
+                clearInterval(refreshInterval);
+                event.stopPropagation();
+            });
+            $(document).on('click', '#closeButton', function () {
+                startRefreshing();
+            });
+        });
+    </script>
+{% endblock js %}

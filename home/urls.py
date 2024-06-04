@@ -6,11 +6,13 @@ from home.views import SignUpView
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('run_scraper', views.run_scraper, name='run_scraper'),
+    # path('run_scraper', views.run_scraper, name='run_scraper'),
     path('add_jobs', views.add_jobs, name='add_jobs'),
     path('signup', SignUpView.as_view(), name='signup'),
     path('view_jobs', views.view_jobs, name='view_jobs'),
+    path('domain_queue', views.domain_queue, name='domain_queue'),
     path('validate_emails', views.validate_emails, name='validate_emails'),
+    path('search_email', views.search_email, name='search_email'),
     path('add_and_review/<int:pk>/', views.add_and_review, name='add_and_review'),
 
     path('login',

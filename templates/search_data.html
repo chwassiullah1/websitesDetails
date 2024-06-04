@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Search Data</title>
+{% endblock title %}
+{% block body %}
+    <div class="container-fluid">
+        <div class="container-fluid">
+            <div class="row mt-5 justify-content-center">
+                <div class="col-md-12">
+                    <div class="container mt-3">
+                        <div class="row justify-content-center">
+                            <div class="col-md-12">
+                                <div class="card border-secondary">
+                                    <div class="card-header navbar-dark bg-dark text-white">
+                                        <h4>Search</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="searchForm" method="post">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+
+                                                <div class="row">
+
+                                                    <div class="col">
+                                                        <label for="exampleFormControlInput1"
+                                                               class="form-label"><strong>Enter
+                                                            Country</strong></label>
+                                                        <input type="text" class="form-control"
+                                                               id="exampleFormControlInput1"
+                                                               placeholder="Country" name="country">
+                                                    </div>
+                                                    <div class="col">
+                                                        <label for="exampleFormControlInput1"
+                                                               class="form-label"><strong>Enter
+                                                            Street City State</strong></label>
+                                                        <input type="text" class="form-control"
+                                                               id="exampleFormControlInput1"
+                                                               placeholder="Street City State"
+                                                               name="street_and_city_and_state">
+                                                    </div>
+                                                    <div class="col">
+                                                        <label for="exampleFormControlInput1"
+                                                               class="form-label"><strong>Two Digit ISO Country
+                                                            Code</strong></label>
+                                                        <input type="text" class="form-control"
+                                                               id="exampleFormControlInput1"
+                                                               placeholder="Two Digit ISO Country Code"
+                                                               name="two_digit_iso_country_code">
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="row">
+
+                                                    <div class="col">
+                                                        <label for="exampleFormControlInput1"
+                                                               class="form-label"><strong>Enter
+                                                            Product</strong></label>
+                                                        <input type="text" class="form-control"
+                                                               id="exampleFormControlInput1"
+                                                               placeholder="Product" name="product">
+                                                    </div>
+                                                    <div class="col">
+                                                        <label for="exampleFormControlInput1"
+                                                               class="form-label"><strong>Enter
+                                                            Service</strong></label>
+                                                        <input type="text" class="form-control"
+                                                               id="exampleFormControlInput1"
+                                                               placeholder="Service"
+                                                               name="service">
+                                                    </div>
+                                                    <div class="col">
+                                                        <label for="exampleFormControlInput1"
+                                                               class="form-label"><strong>Company Headquarter Country
+                                                            ISO Code</strong></label>
+                                                        <input type="text" class="form-control"
+                                                               id="exampleFormControlInput1"
+                                                               placeholder="Company Headquarter Country ISO Code"
+                                                               name="company_headquarter_country_iso_code">
+                                                    </div>
+
+                                                </div>
+                                                <div class="row">
+
+                                                    <div class="col">
+                                                        <label for="exampleFormControlInput1"
+                                                               class="form-label"><strong>Enter
+                                                            Sector</strong></label>
+                                                        <input type="text" class="form-control"
+                                                               id="exampleFormControlInput1"
+                                                               placeholder="Sector" name="sector">
+                                                    </div>
+                                                    <div class="col">
+                                                        <label for="exampleFormControlInput1"
+                                                               class="form-label"><strong>Enter
+                                                            Entity Type</strong></label>
+                                                        <input type="text" class="form-control"
+                                                               id="exampleFormControlInput1"
+                                                               placeholder="Entity Type"
+                                                               name="entity_type">
+                                                    </div>
+                                                    <div class="col">
+
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Search</button>
+                                            <a href="{% url 'search_data' %}" class="btn btn-danger">Clear</a>
+                                            {% if json_data %}
+                                                <button class="btn btn-info" id="downloadBtn">
+                                                    Download JSON
+                                                </button>
+                                            {% endif %}
+
+                                        </form>
+                                    </div>
+                                    <div class="card-body" style="height:300px; overflow-y: auto;">
+                                        {{ json_data|safe }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+{% block js %}
+    <script>
+        document.getElementById('downloadBtn').addEventListener('click', function () {
+            try {
+                const blob = new Blob([JSON.stringify({{ json_data | safe }})], {type: 'application/json'});
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                const date = new Date();
+                const formattedDate = date.toISOString().slice(0, 10).replace(/-/g, '');
+                link.download = `searched_data_${formattedDate}.json`;
+                link.click();
+
+            } catch (error) {
+                console.error("Error downloading file:", error);
+                // Display an error message to the user (optional)
+                alert("An error occurred while downloading the JSON file. Please check the browser console for details.");
+            }
+        });
+    </script>
+{% endblock js %}

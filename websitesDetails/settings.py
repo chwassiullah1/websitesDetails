@@ -35,7 +35,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'home'
+    'djongo',
+    'home',
+    'process_one'
+
 ]
 
 MIDDLEWARE = [
@@ -79,15 +82,25 @@ WSGI_APPLICATION = 'websitesDetails.wsgi.application'
 #     }
 # }
 
-
+DATABASE_ROUTERS = ['home.db_router.MySQLRouter', 'process_one.db_router.MongoDBRouter', ]
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'websitesdetails_db',
-        'USER': 'user',
-        'PASSWORD': 'NvjEvUmdRexKEHgcgPAMM',
-        'HOST': '159.69.40.74',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
         'PORT': '3306',
+    },
+    'mongodb': {
+        'ENGINE': 'djongo',
+        'NAME': 'domains_data',
+        'CLIENT': {
+            'host': 'mongodb://localhost:27017',
+        },
+        'OPTIONS': {
+            'cmd_options': '--storageEngine=wiredTiger',  # Required for text search
+        }
     }
 }
 

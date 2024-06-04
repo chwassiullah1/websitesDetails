@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO)
 
 
 
-
 def remove_html_tags(text):
     clean_text = re.sub('<[^<]+?>', '', text)
     clean_text = re.sub(r'\s+', ' ', clean_text)

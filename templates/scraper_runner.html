@@ -16,6 +16,11 @@
                                     <div class="card-header navbar-dark bg-dark text-white">
                                         <h4>Run Scraper</h4>
                                     </div>
+                                    {% if message %}
+                                        <div class="alert alert-info" role="alert" id="myAlert">
+                                            {{ message }}
+                                        </div>
+                                    {% endif %}
                                     <div class="card-body">
                                         <form method="post">
                                             {% csrf_token %}
@@ -33,7 +38,8 @@
                                         </form>
 
                                         <div class="mb-3">
-                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Merged JSON</strong></label>
+                                            <label for="exampleFormControlTextarea1" class="form-label"><strong>Merged
+                                                JSON</strong></label>
                                             <textarea class="form-control" id="exampleFormControlTextarea1"
                                                       rows="3">{{ final_json }}
                                             </textarea>
@@ -105,4 +111,13 @@
     </div>
 {% endblock body %}
 {% block js %}
+    <script>
+        // Function to remove the alert after 4 seconds
+        setTimeout(function () {
+            var alertElement = document.getElementById('myAlert');
+            if (alertElement) {
+                alertElement.remove();
+            }
+        }, 4000); // 4000 milliseconds = 4 seconds
+    </script>
 {% endblock js %}
