@@ -17,7 +17,7 @@
                                         <h4>Search</h4>
                                     </div>
                                     <div class="card-body">
-                                        <form method="post">
+                                        <form method="post" id="email">
                                             {% csrf_token %}
                                             <div class="mb-3">
                                                 <label for="exampleFormControlInput1" class="form-label"><strong>Enter
@@ -26,9 +26,10 @@
                                                        id="exampleFormControlInput1"
                                                        placeholder="example@gmail.com" name="email">
                                             </div>
-                                            <button type="submit" class="btn btn-primary">Search</button>
+{#                                            <button type="submit" class="btn btn-primary">Search</button>#}
                                             <a href="{% url 'search_email' %}" class="btn btn-danger">Clear</a>
                                         </form>
+                                        <ul id="results"></ul>
                                     </div>
                                     <div class="card-body" style="height:300px; overflow-y: auto;">
                                         <table id="jobs-table" class="table">
@@ -39,12 +40,6 @@
                                             </tr>
                                             </thead>
                                             <tbody id="jobs-table-body">
-                                            {% for email in emails %}
-                                                <tr>
-                                                    <td>{{ email.address }}</td>
-                                                    <td>{{ email.status }}</td>
-                                                </tr>
-                                            {% endfor %}
                                             </tbody>
                                         </table>
                                     </div>
@@ -58,4 +53,30 @@
     </div>
 {% endblock body %}
 {% block js %}
+    <script>
+        $(document).ready(function () {
+            $('#exampleFormControlInput1').on('input', function () {
+                var email = $(this).val();
+                if (email) {
+                    $.ajax({
+                        url: 'search_email',
+                        type: 'POST',
+                        data: {
+                            'email': email,
+                            'csrfmiddlewaretoken': '{{ csrf_token }}'
+                        },
+                        success: function (response) {
+                            $('#jobs-table-body').empty();  // Clear existing rows
+                            response.forEach(function (email) {
+                                $('#jobs-table-body').append('<tr><td>' + email.address + '</td><td>' + email.status + '</td></tr>');
+                            });
+                        }
+                    });
+                } else {
+                    $('#jobs-table-body').empty();  // Clear table if no input
+                }
+            });
+        });
+    </script>
+
 {% endblock js %}

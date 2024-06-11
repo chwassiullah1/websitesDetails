@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 
+
 def remove_html_tags(text):
     clean_text = re.sub('<[^<]+?>', '', text)
     clean_text = re.sub(r'\s+', ' ', clean_text)
@@ -58,18 +59,6 @@ def company_shortest_name(company_short_name):
                 shortest_name = name
         company_short_name = shortest_name
     return company_short_name
-
-
-# def remove_duplicate_products(data):
-#     products = data.get("product", [])
-#     if products:
-#         products = list(set([product.lower() for product in products]))
-#         products = [product.title() for product in products]
-#         data["product"] = products
-#         return data
-#     else:
-#         data["product"] = []
-#         return data
 
 
 def similarity_ratio(a, b):
@@ -138,131 +127,6 @@ def merge_website_pages_json_api_hunter_json(api_hunter_json_str, website_pages_
             website_pages_merged_json[key] = value
     return website_pages_merged_json
 
-
-# OLD CODE
-# def merge_all_pages_jsons(json_list):
-#     merged_json = {}
-#     if json_list:
-#         for json_obj in json_list:
-#             json_obj = json.loads(json_obj)
-#             for key, value in json_obj.items():
-#                 if value is not None:
-#                     if key not in merged_json:
-#                         merged_json[key] = standardize_value(value)
-#                     else:
-#                         if isinstance(value, list):
-#                             if all(isinstance(item, dict) for item in value):
-#                                 if isinstance(merged_json[key], str):
-#                                     merged_json[key] = json.loads(merged_json[key])
-#                                 merged_json[key].extend([dict(items) for items in set(
-#                                     tuple((k, standardize_value(v)) for k, v in d.items() if
-#                                           standardize_value(v) is not None) for d in
-#                                     merged_json[key] + value)])
-#                                 # Remove duplicates
-#                                 merged_json[key] = remove_duplicates(merged_json[key])
-#                             else:
-#                                 merged_json[key].extend(
-#                                     list(set(standardize_value(v) for v in value)))
-#                                 # Remove duplicates
-#                                 merged_json[key] = remove_duplicates(merged_json[key])
-#                         elif isinstance(value, dict):
-#                             if isinstance(merged_json[key], str):
-#                                 merged_json[key] = json.loads(merged_json[key])
-#                             merged_json[key] = merge_all_pages_jsons([merged_json[key], value])
-#                         else:
-#                             standardized_value = standardize_value(value)
-#                             if isinstance(merged_json[key], list):
-#                                 if standardized_value not in merged_json[key]:
-#                                     merged_json[key].append(standardized_value)
-#                             else:
-#                                 if standardized_value != merged_json[key]:
-#                                     merged_json[key] = [merged_json[key], standardized_value]
-#         return json.dumps(merged_json).strip()
-
-# old code 2
-# def merge_dicts(dict1, dict2):
-#     merged_dict = {**dict1, **dict2}
-#     for key, value in merged_dict.items():
-#         if isinstance(value, list):
-#             if all(isinstance(item, dict) for item in value):
-#                 merged_dict[key] = [merge_dicts(d1, d2) for d1, d2 in zip(dict1.get(key, []), value)]
-#             else:
-#                 merged_dict[key] = remove_duplicates(value)
-#     return merged_dict
-#
-#
-# def merge_all_pages_jsons(json_list):
-#     merged_json = {}
-#     company_legal_name = []
-#     company_short_name = []
-#     for json_obj in json_list:
-#         try:
-#             json_obj = json.loads(json_obj.replace('null', '""'))
-#         except json.JSONDecodeError:
-#             continue
-#
-#         # Check if 'company_legal_name' is present in the current JSON object
-#         if 'company_legal_name' in json_obj:
-#             if json_obj['company_legal_name'] is not None:
-#                 company_legal_name.append(json_obj['company_legal_name'])
-#
-#         if 'company_short_name' in json_obj:
-#             if json_obj['company_short_name'] is not None:
-#                 company_short_name.append(json_obj['company_short_name'])
-#
-#         # Merge the current JSON object with the merged JSON
-#         for key, value in json_obj.items():
-#             # Handle None values consistently
-#             if value is None:
-#                 continue
-#             existing_value = merged_json.get(key)
-#             if isinstance(value, list):
-#                 if all(isinstance(item, dict) for item in value):
-#                     if isinstance(existing_value, str):
-#                         if existing_value:
-#                             existing_value = json.loads(existing_value)
-#                     if isinstance(existing_value, list) and all(
-#                             isinstance(item, dict) for item in existing_value):
-#                         merged_json[key] = [merge_dicts(d1, d2) for d1, d2 in zip(existing_value, value)]
-#                     else:
-#                         merged_json[key] = []
-#                 merged_json[key] = remove_duplicates(
-#                     [standardize_value(v) for v in (existing_value or []) + value])
-#             elif isinstance(value, dict):
-#                 if existing_value is None:
-#                     merged_json[key] = value
-#                 else:
-#                     try:
-#                         merged_json[key] = merge_dicts(existing_value, value)
-#                     except TypeError:
-#                         pass
-#             else:
-#                 if existing_value is None or existing_value != standardize_value(value):
-#                     merged_json[key] = standardize_value(value)
-#
-#     if company_legal_name is not None:
-#         merged_json['company_legal_name'] = company_legal_name
-#
-#     if company_short_name is not None:
-#         merged_json['company_short_name'] = company_short_name
-#
-#     return json.dumps(merged_json).strip()
-
-
-# def remove_duplicates(lst):
-#     seen = set()
-#     result = []
-#     for item in lst:
-#         if isinstance(item, dict):
-#             items = tuple(sorted(item.items()))
-#             if items not in seen:
-#                 seen.add(items)
-#                 result.append(item)
-#         elif isinstance(item, str):
-#             if item not in seen:
-#                 seen.add(item)
-#                 result.append(item)
-#     return result
 
 def merge_all_pages_jsons(json_list):
     company_legal_name = []
@@ -345,7 +209,7 @@ def merge_all_pages_jsons(json_list):
 async def run_assistant(response, pages_text):
     pages_json_with_key = await main(pages_text)
     website_pages_merged_json_str = merge_all_pages_jsons([js_str[1] for js_str in pages_json_with_key if js_str])
-    if not website_pages_merged_json_str == '{"page_available": False}':
+    if not website_pages_merged_json_str == '{"page_available": "false"}':
         api_hunter_json_str = response.text
 
         all_json_merged = merge_website_pages_json_api_hunter_json(api_hunter_json_str,

@@ -14,7 +14,10 @@ urlpatterns = [
     path('validate_emails', views.validate_emails, name='validate_emails'),
     path('search_email', views.search_email, name='search_email'),
     path('add_and_review/<int:pk>/', views.add_and_review, name='add_and_review'),
-
+    path('login_api', views.login_api, name='login_api'),
+    path('search_by_domain', views.search_by_domain, name='search_by_domain'),
+    path('search_by_domain_name', views.search_by_domain_name, name='search_by_domain_name'),
+    path('search_complete_email', views.search_complete_email, name='search_complete_email'),
     path('login',
          LoginView.as_view(template_name='login.html', success_url='home', authentication_form=CustomLoginForm),
          name='login'),

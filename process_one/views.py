@@ -5,7 +5,6 @@ import re
 from urllib.parse import urljoin
 import scrapy
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 import requests
@@ -13,9 +12,7 @@ from bs4 import BeautifulSoup
 from home.toolbox import links_determiner_assistant, run_assistant, filter_links, clean_url
 import logging
 import codecs
-from pymongo import MongoClient, ASCENDING
-from django.db.models import Q
-from django.http import JsonResponse, HttpResponse
+from pymongo import MongoClient
 
 logging.basicConfig(level=logging.INFO)
 from process_one.models import DomainsData
@@ -44,8 +41,6 @@ def run_scraper(request):
         }
         existing_domain = DomainsData.objects.filter(**query).first()
         if not existing_domain:
-            pass
-
             ssl_info = check_ssl(clean_website_url)
             if ssl_info:
                 website_url = f'https://www.{clean_website_url}'
@@ -94,19 +89,17 @@ def run_scraper(request):
                        'about_page_text': about_page_text,
                        'products_page_text': products_page_text,
                        'contact_page_text': contact_page_text,
-
                        'home_page_json': home_page_json,
                        'about_page_json': about_page_json,
                        'contact_page_json': contact_page_json,
                        'products_page_json': products_page_json,
-
                        'website_url': website_url,
                        }
-            final_json = final_json
-            final_json_data = json.loads(final_json)
-            instance = DomainsData.objects.create(data=final_json_data)
-            instance.save()
-            context['message'] = 'Domain Added to database..'
+            if final_json:
+                final_json_data = json.loads(final_json)
+                instance = DomainsData.objects.create(data=final_json_data)
+                instance.save()
+                context['message'] = 'Domain Added to database..'
         else:
             context = {'message': 'Domain Already exist..!'}
         return render(request, 'scraper_runner.html', context=context)
@@ -157,7 +150,7 @@ async def parse(website_url):
         data_dict = {
             'links': '',
             'json_response': '',
-            'data': {"page_available": False},
+            'data': '{"page_available": "false"}',
             'pages_text': ''
         }
         return data_dict
@@ -202,14 +195,14 @@ async def parse(website_url):
             'pages_text': pages_text
         }
         return data_dict
-    else:
-        data_dict = {
-            'links': '',
-            'json_response': {"page_available": False},
-            'data': '',
-            'pages_text': ''
-        }
-        return data_dict
+    # else:
+    #     data_dict = {
+    #         'links': '',
+    #         'json_response': '{"page_available": "false"}',
+    #         'data': '',
+    #         'pages_text': ''
+    #     }
+    #     return data_dict
 
 
 async def get_api_hunter_data(response, pages_text):
@@ -219,14 +212,7 @@ async def get_api_hunter_data(response, pages_text):
 
 # Create your views here.
 def search_data(request):
-    # query = {
-    #     "data": {"domain": clean_website_url, "$options": "i"}  # Case-insensitive search
-    # }
-    # existing_domain = DomainsData.objects.filter(**query).first()
-    # """address->country, address->street_and_city_and_state, address->two_digit_iso_country_code, product, service, company_headquarter_country_iso_code, sector, entity_type"""
     if request.method == "POST":
-        products_flag = False
-        query = {}
         country = request.POST.get('country')
         street_and_city_and_state = request.POST.get('street_and_city_and_state')
         two_digit_iso_country_code = request.POST.get('two_digit_iso_country_code')
@@ -238,7 +224,6 @@ def search_data(request):
         client = MongoClient('mongodb://localhost:27017/')
         db = client['domains_data']
         collection = db['domains_data']
-        # all_documents = collection.find()
         query = {}
         address_query = {}
         if country:
@@ -264,7 +249,10 @@ def search_data(request):
             json_list = []
             documents = list(results)
             for document in documents:
-                json_list.append(json.dumps(document.get('data'), ensure_ascii=False))
+                json_string = json.dumps(document.get('data'), ensure_ascii=False)
+                decoded_json_string = json_string.encode('latin1').decode('utf-8')
+                decoded_document = json.loads(decoded_json_string)
+                json_list.append(decoded_document)
             if json_list:
                 context = {'json_data': json_list}
             else:
@@ -275,27 +263,3 @@ def search_data(request):
     else:
         context = {'json_data': ''}
         return render(request, 'search_data.html', context=context)
-
-# # if country:
-# #     query.update({
-# #         "$match": {
-# #             "$expr": {
-# #                 "$in": [country, "$data.address.country"]
-# #             }
-# #         }
-# #     })
-# # if street_and_city_and_state:
-# #     pass
-# # if two_digit_iso_country_code:
-# #     pass
-# if product:
-#     query.update({"data": {"product": product, "$options": "$in"}})
-# if service:
-#     query.update({"data": {"service": service, "$options": "$in"}})
-# if company_headquarter_country_iso_code:
-#     query.update({"data": {"company_headquarter_country_iso_code": company_headquarter_country_iso_code,
-#                            "$options": "$in"}})
-# if sector:
-#     query.update({"data": {"sector": sector, "$options": "$in"}})
-# if entity_type:
-#     query.update({"data": {"entity_type": entity_type}})

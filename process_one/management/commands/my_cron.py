@@ -13,6 +13,7 @@ import codecs
 from process_one.models import DomainsData
 from home.models import DomainQueue
 from django.utils import timezone
+import time
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,35 +22,45 @@ class Command(BaseCommand):
     help = 'Custom cron job command'
 
     def handle(self, *args, **options):
-        domains = DomainQueue.objects.filter(processed=0)
-        for domain in domains:
-            start_time = timezone.now()
-            clean_website_url = clean_url(domain.domain)
-            query = {
-                "data": {"domain": clean_website_url, "$options": "i"}  # Case-insensitive search
-            }
-            existing_domain = DomainsData.objects.filter(**query).first()
-            if not existing_domain:
-                ssl_info = check_ssl(clean_website_url)
-                if ssl_info:
-                    website_url = f'https://www.{clean_website_url}'
+        while True:
+            try:
+                domains = DomainQueue.objects.filter(processed=0)
+                if domains:
+                    for domain in domains:
+                        start_time = timezone.now()
+                        clean_website_url = clean_url(domain.domain)
+                        query = {
+                            "data": {"domain": clean_website_url, "$options": "i"}
+                        }
+                        existing_domain = DomainsData.objects.filter(**query).first()
+                        if not existing_domain:
+                            ssl_info = check_ssl(clean_website_url)
+                            if ssl_info:
+                                website_url = f'https://www.{clean_website_url}'
+                            else:
+                                website_url = f'http://www.{clean_website_url}'
+                            try:
+                                data_dict = run_asyncio_task(parse(website_url))
+                                final_json = codecs.decode(data_dict.get('data'), 'unicode_escape')
+                                final_json_data = json.loads(final_json)
+                                instance = DomainsData.objects.create(data=final_json_data)
+                                instance.save()
+                                end_time = timezone.now()
+                                DomainQueue.objects.filter(id=domain.id).update(processed=1,
+                                                                                process_start=start_time,
+                                                                                process_finished=end_time)
+                                self.stdout.write(self.style.SUCCESS('Successfully updated DomainQueue Model'))
+                            except Exception as e:
+                                self.stdout.write(self.style.ERROR(f'Error: {e}'))
+                        else:
+                            self.stdout.write(self.style.SUCCESS('Record already processed...!'))
                 else:
-                    website_url = f'http://www.{clean_website_url}'
-                try:
-                    data_dict = run_asyncio_task(parse(website_url))
-                    final_json = codecs.decode(data_dict.get('data'), 'unicode_escape')
-                    final_json_data = json.loads(final_json)
-                    instance = DomainsData.objects.create(data=final_json_data)
-                    instance.save()
-                    end_time = timezone.now()
-                    DomainQueue.objects.filter(id=domain.id).update(processed=1,
-                                                                    process_start=start_time,
-                                                                    process_finished=end_time)
-                    self.stdout.write(self.style.SUCCESS('Successfully updated DomainQueue Model'))
-                except Exception as e:
-                    self.stdout.write(self.style.ERROR(f'Error: {e}'))
-            else:
-                self.stdout.write(self.style.SUCCESS('Record already processed...!'))
+                    self.stdout.write(self.style.ERROR('NO RECORDS FOUND...!'))
+                    time.sleep(120)
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(F'{e}'))
+                time.sleep(120)
+                continue
 
 
 def check_ssl(url):
