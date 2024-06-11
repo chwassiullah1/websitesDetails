@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import re
 from urllib.parse import urljoin
 from pymongo import MongoClient
@@ -52,7 +53,7 @@ def check_ssl(url):
 
 async def run_scraper(website_url):
     clean_website_url = clean_url(website_url)
-    client = MongoClient('mongodb://localhost:27017/')
+    client = MongoClient(os.getenv('MONGO_DB_HOST'))
     db = client['domains_data']
     collection = db['domains_data']
     query = {}

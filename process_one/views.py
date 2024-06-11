@@ -1,5 +1,7 @@
 import json
 import asyncio
+import os
+
 import aiohttp
 import re
 from urllib.parse import urljoin
@@ -221,7 +223,7 @@ def search_data(request):
         company_headquarter_country_iso_code = request.POST.get('company_headquarter_country_iso_code')
         sector = request.POST.get('sector')
         entity_type = request.POST.get('entity_type')
-        client = MongoClient('mongodb://localhost:27017/')
+        client = MongoClient(os.getenv('MONGO_DB_HOST'))
         db = client['domains_data']
         collection = db['domains_data']
         query = {}

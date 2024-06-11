@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import re
 from urllib.parse import urlparse
 
@@ -13,7 +14,8 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-
+open_ai_api_key = os.getenv('OPEN_AI_API_KEY')
+zero_bounce_api_key = os.getenv('ZERO_BOUNCE_API_KEY')
 
 
 def remove_html_tags(text):
@@ -232,7 +234,7 @@ async def main(pages_text):
 
 
 async def process_text(text):
-    client = AsyncOpenAI(api_key=api_key)
+    client = AsyncOpenAI(api_key=open_ai_api_key)
     thread = await client.beta.threads.create()
     message = await client.beta.threads.messages.create(
         thread_id=thread.id,
@@ -266,7 +268,7 @@ async def process_text(text):
 
 
 def links_determiner_assistant(content):
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=open_ai_api_key)
     thread = client.beta.threads.create()
     message = client.beta.threads.messages.create(
         thread_id=thread.id,

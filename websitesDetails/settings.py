@@ -11,7 +11,12 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
 from pathlib import Path
+from pathlib import Path
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -19,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-smz6qizo^m*81q+fa+3dzgjph)5in-jjsd4hr11^zi(8oj!3m@'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -86,17 +91,17 @@ DATABASE_ROUTERS = ['home.db_router.MySQLRouter', 'process_one.db_router.MongoDB
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'websitesdetails_db',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': 'localhost',
+        'NAME': os.getenv('MYSQL_DATABASE_NAME'),
+        'USER': os.getenv('MYSQL_USER'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+        'HOST': os.getenv('MYSQL_HOST'),
         'PORT': '3306',
     },
     'mongodb': {
         'ENGINE': 'djongo',
-        'NAME': 'domains_data',
+        'NAME': os.getenv('MONGO_DB_NAME'),
         'CLIENT': {
-            'host': 'mongodb://localhost:27017',
+            'host': os.getenv('MONGO_DB_HOST'),
         },
         'OPTIONS': {
             'cmd_options': '--storageEngine=wiredTiger',  # Required for text search
